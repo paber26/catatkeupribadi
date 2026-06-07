@@ -143,6 +143,119 @@
       .badge-aldo { background-color: #d1ecf1; color: #0c5460; }
       .badge-iren { background-color: #f8d7da; color: #721c24; }
 
+      /* ========= Date Group Accordion ========= */
+      .date-group {
+        margin-bottom: 12px;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        overflow: hidden;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+      }
+
+      .date-group-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 14px;
+        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+        cursor: pointer;
+        user-select: none;
+        transition: background 0.2s ease;
+        border-bottom: 1px solid transparent;
+      }
+
+      .date-group-header:hover {
+        background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+      }
+
+      .date-group.open .date-group-header {
+        border-bottom-color: #e2e8f0;
+      }
+
+      .date-group-left {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .date-group-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+        color: #ffffff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.75em;
+        font-weight: 800;
+        flex-shrink: 0;
+      }
+
+      .date-group-info {
+        display: flex;
+        flex-direction: column;
+        gap: 1px;
+      }
+
+      .date-group-date {
+        font-size: 0.88em;
+        font-weight: 700;
+        color: #0f172a;
+      }
+
+      .date-group-meta {
+        font-size: 0.72em;
+        color: #64748b;
+        font-weight: 500;
+      }
+
+      .date-group-right {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .date-group-total {
+        font-size: 0.82em;
+        font-weight: 700;
+        color: #0f172a;
+        text-align: right;
+      }
+
+      .date-group-chevron {
+        width: 20px;
+        height: 20px;
+        color: #94a3b8;
+        transition: transform 0.25s ease;
+        flex-shrink: 0;
+      }
+
+      .date-group.open .date-group-chevron {
+        transform: rotate(180deg);
+      }
+
+      .date-group-body {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.3s ease;
+      }
+
+      .date-group.open .date-group-body {
+        max-height: 5000px;
+      }
+
+      .date-group-body .history-card {
+        border: none;
+        border-radius: 0;
+        border-bottom: 1px solid #f1f5f9;
+        box-shadow: none;
+      }
+
+      .date-group-body .history-card:last-child {
+        border-bottom: none;
+      }
+
       /* Sticky Bottom Navigation menu */
       .bottom-nav {
         position: fixed;
@@ -553,34 +666,127 @@
           return;
         }
 
-        filtered.reverse().forEach(function(item) {
-          var card = document.createElement("div");
-          card.className = "history-card";
-          
-          var pembuat = item.pembuat || "Aldo";
-          var badgeClass = "badge-" + pembuat.toLowerCase();
-          
-          var isPemasukan = item.tipe === "Pemasukan";
-          var typeSign = isPemasukan ? "+" : "-";
-          var typeColor = isPemasukan ? "#10b981" : "#ef4444";
+        // Group by date
+        var groups = {};
+        var groupOrder = [];
+        filtered.forEach(function(item) {
+          var dateKey = item.tanggal || "Tanpa Tanggal";
+          if (!groups[dateKey]) {
+            groups[dateKey] = [];
+            groupOrder.push(dateKey);
+          }
+          groups[dateKey].push(item);
+        });
 
-          card.innerHTML = `
-            <div class="card-left">
-              <div class="card-category">${item.kategori}</div>
-              <div class="card-date">${item.tanggal}</div>
-              <div class="card-desc">${item.keterangan || "-"}</div>
-            </div>
-            <div class="card-right">
-              <div class="card-amount" style="color: ${typeColor}; font-weight: 700;">${typeSign} Rp ${Number(item.jumlah).toLocaleString('id-ID')}</div>
-              <div><span class="badge ${badgeClass}">${pembuat}</span></div>
-              <div class="card-actions">
-                <button class="action-btn edit" data-id="${item.id}" data-tanggal="${item.tanggal}" data-kategori="${item.kategori}" data-jumlah="${item.jumlah}" data-keterangan="${item.keterangan || ""}" data-pembuat="${pembuat}" data-tipe="${item.tipe || "Pengeluaran"}" onclick="mulaiEditTransaksi(this)">Edit</button>
-                <button class="action-btn delete" onclick="hapusDariSheets('${item.id}')">Hapus</button>
+        // Sort groups by date descending (newest first)
+        groupOrder.sort(function(a, b) {
+          var parseDate = function(str) {
+            var parts = str.split("/");
+            if (parts.length === 3) {
+              return new Date(parts[2], parts[1] - 1, parts[0]);
+            }
+            return new Date(0);
+          };
+          return parseDate(b) - parseDate(a);
+        });
+
+        var dayNames = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
+
+        groupOrder.forEach(function(dateKey, groupIndex) {
+          var items = groups[dateKey];
+          var totalPengeluaran = 0;
+          var totalPemasukan = 0;
+
+          items.forEach(function(item) {
+            var nominal = Number(item.jumlah) || 0;
+            if (item.tipe === "Pemasukan") {
+              totalPemasukan += nominal;
+            } else {
+              totalPengeluaran += nominal;
+            }
+          });
+
+          // Parse day number and day name
+          var dayNum = "";
+          var dayName = "";
+          var dateDisplay = dateKey;
+          var parts = dateKey.split("/");
+          if (parts.length === 3) {
+            dayNum = parseInt(parts[0], 10);
+            var dateObj = new Date(parts[2], parts[1] - 1, parts[0]);
+            dayName = dayNames[dateObj.getDay()];
+            dateDisplay = dayNum + " " + monthNames[parseInt(parts[1], 10) - 1] + " " + parts[2];
+          }
+
+          // Build total display string
+          var totalParts = [];
+          if (totalPengeluaran > 0) totalParts.push('<span style="color:#ef4444;">- Rp ' + totalPengeluaran.toLocaleString('id-ID') + '</span>');
+          if (totalPemasukan > 0) totalParts.push('<span style="color:#10b981;">+ Rp ' + totalPemasukan.toLocaleString('id-ID') + '</span>');
+          var totalHtml = totalParts.join('<br>') || 'Rp 0';
+
+          var group = document.createElement("div");
+          group.className = "date-group" + (groupIndex === 0 ? " open" : "");
+          group.id = "date-group-" + groupIndex;
+
+          var header = document.createElement("div");
+          header.className = "date-group-header";
+          header.onclick = function() { toggleDateGroup(groupIndex); };
+          header.innerHTML = `
+            <div class="date-group-left">
+              <div class="date-group-icon">${dayNum || "?"}</div>
+              <div class="date-group-info">
+                <div class="date-group-date">${dayName ? dayName + ", " + dateDisplay : dateDisplay}</div>
+                <div class="date-group-meta">${items.length} transaksi</div>
               </div>
             </div>
+            <div class="date-group-right">
+              <div class="date-group-total">${totalHtml}</div>
+              <svg class="date-group-chevron" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </div>
           `;
-          listContainer.appendChild(card);
+          group.appendChild(header);
+
+          var body = document.createElement("div");
+          body.className = "date-group-body";
+
+          items.forEach(function(item) {
+            var card = document.createElement("div");
+            card.className = "history-card";
+            
+            var pembuat = item.pembuat || "Aldo";
+            var badgeClass = "badge-" + pembuat.toLowerCase();
+            
+            var isPemasukan = item.tipe === "Pemasukan";
+            var typeSign = isPemasukan ? "+" : "-";
+            var typeColor = isPemasukan ? "#10b981" : "#ef4444";
+
+            card.innerHTML = `
+              <div class="card-left">
+                <div class="card-category">${item.kategori}</div>
+                <div class="card-desc">${item.keterangan || "-"}</div>
+              </div>
+              <div class="card-right">
+                <div class="card-amount" style="color: ${typeColor}; font-weight: 700;">${typeSign} Rp ${Number(item.jumlah).toLocaleString('id-ID')}</div>
+                <div><span class="badge ${badgeClass}">${pembuat}</span></div>
+                <div class="card-actions">
+                  <button class="action-btn edit" data-id="${item.id}" data-tanggal="${item.tanggal}" data-kategori="${item.kategori}" data-jumlah="${item.jumlah}" data-keterangan="${item.keterangan || ""}" data-pembuat="${pembuat}" data-tipe="${item.tipe || "Pengeluaran"}" onclick="mulaiEditTransaksi(this)">Edit</button>
+                  <button class="action-btn delete" onclick="hapusDariSheets('${item.id}')">Hapus</button>
+                </div>
+              </div>
+            `;
+            body.appendChild(card);
+          });
+
+          group.appendChild(body);
+          listContainer.appendChild(group);
         });
+      }
+
+      function toggleDateGroup(index) {
+        var group = document.getElementById("date-group-" + index);
+        if (group) {
+          group.classList.toggle("open");
+        }
       }
 
       // ========== Month Picker Functions ==========
