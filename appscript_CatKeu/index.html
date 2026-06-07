@@ -502,6 +502,7 @@
       let selectedTahun = new Date().getFullYear();
 
       var monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+      let lastUsedDate = ""; // Simpan tanggal terakhir yang diinput user
 
       function inisialisasiUser() {
         pilihUser(currentUser);
@@ -613,9 +614,10 @@
           google.script.run
             .withSuccessHandler(function(response) {
               tunjukkanAlert(response.message, function() {
+                lastUsedDate = document.getElementById('tanggal').value;
                 document.getElementById('jumlah').value = "";
                 document.getElementById('keterangan').value = "";
-                setTodayDate();
+                // Tanggal tetap di tanggal terakhir yang diinput
                 loadDataDariSheets();
               });
             })
@@ -851,7 +853,12 @@
         editingTransactionId = null;
         document.getElementById('jumlah').value = "";
         document.getElementById('keterangan').value = "";
-        setTodayDate();
+        // Kembalikan ke tanggal terakhir yang diinput, bukan hari ini
+        if (lastUsedDate) {
+          document.getElementById('tanggal').value = lastUsedDate;
+        } else {
+          setTodayDate();
+        }
         pilihTipe("Pengeluaran");
         
         var submitBtn = document.querySelector('button.primary');
