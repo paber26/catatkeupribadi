@@ -605,6 +605,7 @@
           google.script.run
             .withSuccessHandler(function(response) {
               tunjukkanAlert(response.message, function() {
+                lastUsedDate = document.getElementById('tanggal').value;
                 batalEditTransaksi();
                 loadDataDariSheets();
               });
