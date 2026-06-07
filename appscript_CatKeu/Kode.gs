@@ -492,13 +492,17 @@ function ubahAnggaran(user, kategori, nominal, bulan, tahun) {
   var targetMonth = (bulan !== undefined && bulan !== null) ? Number(bulan) : (new Date().getMonth() + 1);
   var targetYear = (tahun !== undefined && tahun !== null) ? Number(tahun) : new Date().getFullYear();
   var targetPeriod = targetMonth + "/" + targetYear; // e.g. "6/2026"
+  var currentPeriod = (new Date().getMonth() + 1) + "/" + new Date().getFullYear();
   
   for (var i = 1; i < dataValues.length; i++) {
-    var u = dataValues[i][0];
-    var c = dataValues[i][1];
-    var p = dataValues[i][3]; // Kolom Bulan
+    var u = String(dataValues[i][0]).trim();
+    var c = String(dataValues[i][1]).trim();
+    var p = dataValues[i][3] ? String(dataValues[i][3]).trim() : "";
     
-    if (u === user && c === kategori && (p === targetPeriod || (!p && targetPeriod === (new Date().getMonth() + 1) + "/" + new Date().getFullYear()))) {
+    // Cocokkan user + kategori + periode
+    var periodMatch = (p === targetPeriod) || (p === "" && targetPeriod === currentPeriod);
+    
+    if (u === user && c === kategori && periodMatch) {
       var barisKe = i + 1;
       sheet.getRange(barisKe, 3).setValue(Number(nominal));
       sheet.getRange(barisKe, 4).setValue(targetPeriod);
