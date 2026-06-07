@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <base target="_top">
+  <!-- Load Chart.js for beautiful charts -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    /* Reset & Base Styles */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: #f1f5f9;
+      display: flex;
+      justify-content: center;
+      min-height: 100vh;
+    }
+
+    /* App container shell resembling mobile screen */
+    .app-container {
+      width: 100%;
+      max-width: 480px;
+      background-color: #ffffff;
+      min-height: 100vh;
+      position: relative;
+      padding: 24px 20px 85px 20px;
+      /* Space at bottom for navigation bar */
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.05);
+      display: flex;
+      flex-direction: column;
+    }
+
+    h2 {
+      color: #0f172a;
+      margin-bottom: 20px;
+      text-align: center;
+      font-size: 1.4em;
+      font-weight: 700;
+    }
+
+    h3 {
+      color: #1e293b;
+      margin: 25px 0 15px 0;
+      font-size: 1.1em;
+      font-weight: 700;
+      border-left: 4px solid #007bff;
+      padding-left: 8px;
+    }
+
+    /* Filter Controls Row */
+    .filter-row {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    label {
+      font-weight: 600;
+      font-size: 0.8em;
+      color: #475569;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    input[type="month"] {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      font-size: 0.9em;
+      background-color: #f8fafc;
+      outline: none;
+      transition: all 0.2s ease;
+      font-family: inherit;
+    }
+
+    input[type="month"]:focus {
+      border-color: #007bff;
+      background-color: #ffffff;
+      box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.15);
+    }
+
+    /* Segmented Toggle Control for User Selector */
+    .user-selector {
+      display: flex;
+      justify-content: center;
+      gap: 6px;
+      background: #f1f5f9;
+      padding: 4px;
+      border-radius: 12px;
+    }
+
+    .user-btn {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.85em;
+      font-weight: 600;
+      cursor: pointer;
+      background: transparent;
+      color: #64748b;
+      transition: all 0.2s ease;
+    }
+
+    .user-btn.active {
+      background: #ffffff;
+      color: #0f172a;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+
+    /* Summary Stats Grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .stat-card {
+      padding: 16px 14px;
+      border-radius: 16px;
+      color: #ffffff;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
+
+    .stat-card.income {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    }
+
+    .stat-card.expense {
+      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    }
+
+    .stat-card.balance {
+      grid-column: span 2;
+      background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+    }
+
+    .stat-label {
+      font-size: 0.75em;
+      font-weight: 600;
+      text-transform: uppercase;
+      opacity: 0.9;
+      letter-spacing: 0.5px;
+    }
+
+    .stat-val {
+      font-size: 1.15em;
+      font-weight: 800;
+    }
+
+    .stat-card.balance .stat-val {
+      font-size: 1.4em;
+    }
+
+    /* Visual Dashboard Chart Containers */
+    .chart-container {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 16px;
+      padding: 18px 16px;
+      margin-bottom: 20px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.01);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .chart-title {
+      font-size: 0.9em;
+      font-weight: 700;
+      color: #1e293b;
+      margin-bottom: 12px;
+      width: 100%;
+      text-align: left;
+    }
+
+    .canvas-wrapper {
+      position: relative;
+      width: 100%;
+      height: 220px;
+    }
+
+    /* Breakdown list with custom progress bar indicator */
+    .breakdown-list {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      margin-top: 10px;
+    }
+
+    .breakdown-item {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .breakdown-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.88em;
+    }
+
+    .breakdown-cat {
+      font-weight: 600;
+      color: #0f172a;
+    }
+
+    .breakdown-info {
+      font-weight: 700;
+      color: #475569;
+    }
+
+    .breakdown-pct {
+      font-size: 0.8em;
+      color: #64748b;
+      font-weight: normal;
+      margin-left: 6px;
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 8px;
+      background-color: #f1f5f9;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 0.3s ease;
+    }
+
+    /* Sticky Bottom Navigation menu */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: 480px;
+      height: 65px;
+      background: #ffffff;
+      border-top: 1px solid #e2e8f0;
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.05);
+      z-index: 1000;
+    }
+
+    .nav-tab {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: none;
+      border: none;
+      color: #64748b;
+      cursor: pointer;
+      font-size: 0.65em;
+      font-weight: 600;
+      text-decoration: none;
+      flex: 1;
+      height: 100%;
+      transition: all 0.2s ease;
+    }
+
+    .nav-tab svg {
+      margin-bottom: 3px;
+      color: #64748b;
+      transition: color 0.2s ease;
+    }
+
+    .nav-tab.active {
+      color: #007bff;
+    }
+
+    .nav-tab.active svg {
+      color: #007bff;
+    }
+
+    /* Loading Overlay */
+    .loading-spinner {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px;
+      color: #64748b;
+      font-size: 0.85em;
+    }
+
+    .spinner {
+      width: 28px;
+      height: 28px;
+      border: 3px solid #cbd5e1;
+      border-top-color: #007bff;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-bottom: 12px;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+    
+    .empty-state {
+      text-align: center;
+      color: #64748b;
+      padding: 30px 20px;
+      font-size: 0.9em;
+      background: #f8fafc;
+      border-radius: 12px;
+      border: 1px dashed #cbd5e1;
+      width: 100%;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="app-container">
+    <h2>Analisis Keuangan</h2>
+
+    <!-- Filter Section -->
+    <div class="filter-row">
+      <div class="form-group">
+        <label>Pilih Bulan</label>
+        <input type="month" id="filter-bulan" onchange="prosesDataTersaring()">
+      </div>
+
+      <div class="form-group">
+        <label>Filter Pengguna</label>
+        <div class="user-selector">
+          <button class="user-btn active" id="btn-semua" onclick="pilihUserFilter('Semua')">Semua</button>
+          <button class="user-btn" id="btn-aldo" onclick="pilihUserFilter('Aldo')">Aldo</button>
+          <button class="user-btn" id="btn-iren" onclick="pilihUserFilter('Iren')">Iren</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Spinner Loading -->
+    <div id="loading-dashboard" class="loading-spinner">
+      <div class="spinner"></div>
+      <span>Memuat data rekapitulasi...</span>
+    </div>
+
+    <!-- Content Dashboard (Hidden by default) -->
+    <div id="content-dashboard" style="display: none;">
+      <!-- Stats Ringkasan -->
+      <div class="stats-grid">
+        <div class="stat-card income">
+          <span class="stat-label">Pemasukan</span>
+          <span class="stat-val" id="total-pemasukan">Rp 0</span>
+        </div>
+        <div class="stat-card expense">
+          <span class="stat-label">Pengeluaran</span>
+          <span class="stat-val" id="total-pengeluaran">Rp 0</span>
+        </div>
+        <div class="stat-card balance" id="card-saldo-bersih">
+          <span class="stat-label">Saldo Bersih</span>
+          <span class="stat-val" id="total-saldo-bersih">Rp 0</span>
+        </div>
+      </div>
+
+      <!-- Charts Section -->
+      <h3>Visualisasi Distribusi</h3>
+      
+      <!-- Expense Donut Chart -->
+      <div class="chart-container" id="container-chart-pengeluaran">
+        <div class="chart-title">Pembagian Pengeluaran</div>
+        <div class="canvas-wrapper">
+          <canvas id="chart-pengeluaran"></canvas>
+        </div>
+      </div>
+      
+      <!-- Income Donut Chart -->
+      <div class="chart-container" id="container-chart-pemasukan">
+        <div class="chart-title">Pembagian Pemasukan</div>
+        <div class="canvas-wrapper">
+          <canvas id="chart-pemasukan"></canvas>
+        </div>
+      </div>
+
+      <!-- User Comparison Chart (Only shown in 'Semua' filter) -->
+      <div class="chart-container" id="container-chart-perbandingan">
+        <div class="chart-title">Perbandingan Aldo vs Iren</div>
+        <div class="canvas-wrapper">
+          <canvas id="chart-perbandingan"></canvas>
+        </div>
+      </div>
+
+      <!-- Breakdown Kategori -->
+      <h3>Rincian Kategori Pengeluaran</h3>
+      <div class="breakdown-list" id="rekap-pengeluaran-list">
+        <!-- Diisi secara dinamis -->
+      </div>
+      
+      <h3 style="margin-top: 30px;">Rincian Kategori Pemasukan</h3>
+      <div class="breakdown-list" id="rekap-pemasukan-list">
+        <!-- Diisi secara dinamis -->
+      </div>
+    </div>
+
+    <!-- Sticky Bottom Navigation Bar -->
+    <div class="bottom-nav">
+      <a href="javascript:void(0)" onclick="kembaliKeTransaksi()" class="nav-tab">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="5" width="20" height="14" rx="2" ry="2" />
+          <line x1="2" y1="10" x2="22" y2="10" />
+        </svg>
+        <span>Transaksi</span>
+      </a>
+      <a href="javascript:void(0)" class="nav-tab active">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/>
+        </svg>
+        <span>Dashboard</span>
+      </a>
+      <a href="javascript:void(0)" onclick="keHalamanAnggaran()" class="nav-tab">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+        </svg>
+        <span>Anggaran</span>
+      </a>
+      <a href="javascript:void(0)" onclick="keHalamanKategori()" class="nav-tab">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="7" height="7" />
+          <rect x="14" y="3" width="7" height="7" />
+          <rect x="14" y="14" width="7" height="7" />
+          <rect x="3" y="14" width="7" height="7" />
+        </svg>
+        <span>Kategori</span>
+      </a>
+      <a href="javascript:void(0)" onclick="keHalamanAset()" class="nav-tab">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20 12V8H6a2 2 0 0 1-2-2c0-1.1.9-2 2-2h12v2" />
+          <path d="M4 6v12a2 2 0 0 0 2 2h14v-4" />
+          <path d="M18 12a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h4v-6Z" />
+        </svg>
+        <span>Aset</span>
+      </a>
+    </div>
+  </div>
+
+  <script>
+    let activeUserFilter = "Semua"; 
+    let currentUser = "<?= currentUser ?>";
+    let localTransactions = [];
+    
+    // Simpan instance chart agar bisa dihancurkan saat refresh
+    let chartPengeluaranInstance = null;
+    let chartPemasukanInstance = null;
+    let chartPerbandinganInstance = null;
+
+    // Tetapkan filter bulan default ke bulan saat ini
+    function setBulanDefault() {
+      var now = new Date();
+      var YYYY = now.getFullYear();
+      var MM = String(now.getMonth() + 1).padStart(2, '0');
+      document.getElementById("filter-bulan").value = YYYY + "-" + MM;
+    }
+
+    function kembaliKeTransaksi() {
+      window.top.location.href = "<?= scriptUrl ?>?user=" + currentUser;
+    }
+
+    function keHalamanAnggaran() {
+      window.top.location.href = "<?= scriptUrl ?>?page=anggaran&user=" + currentUser;
+    }
+
+    // Navigasi ke Kategori
+    function keHalamanKategori() {
+      window.top.location.href = "<?= scriptUrl ?>?page=kategori&user=" + currentUser;
+    }
+
+    // Navigasi ke Aset
+    function keHalamanAset() {
+      window.top.location.href = "<?= scriptUrl ?>?page=aset&user=" + currentUser;
+    }
+
+    function pilihUserFilter(nama) {
+      activeUserFilter = nama;
+      document.querySelectorAll('.user-btn').forEach(function (btn) {
+        btn.classList.remove('active');
+      });
+      var targetId = 'btn-' + nama.toLowerCase();
+      var activeBtn = document.getElementById(targetId);
+      if (activeBtn) activeBtn.classList.add('active');
+      
+      prosesDataTersaring();
+    }
+
+    // Ambil data transaksi dari sheets
+    function loadDataUntukDashboard() {
+      document.getElementById("loading-dashboard").style.display = "flex";
+      document.getElementById("content-dashboard").style.display = "none";
+      
+      google.script.run
+        .withSuccessHandler(function (txArray) {
+          localTransactions = txArray;
+          document.getElementById("loading-dashboard").style.display = "none";
+          document.getElementById("content-dashboard").style.display = "block";
+          
+          prosesDataTersaring();
+        })
+        .ambilSemuaData();
+    }
+
+    // Parse tanggal transaksi (format d/m/yyyy atau yyyy-mm-dd) ke format YYYY-MM
+    function dapatkanBulanTransaksi(dateStr) {
+      if (!dateStr) return "";
+      var parts = dateStr.split("/");
+      if (parts.length === 3) {
+        var year = parts[2];
+        var month = parts[1].padStart(2, '0');
+        return `${year}-${month}`;
+      }
+      var partsDash = dateStr.split("-");
+      if (partsDash.length === 3) {
+        return `${partsDash[0]}-${partsDash[1].padStart(2, '0')}`;
+      }
+      return "";
+    }
+
+    function prosesDataTersaring() {
+      var selectedMonth = document.getElementById("filter-bulan").value; // Format: YYYY-MM
+      
+      // Filter transaksi berdasarkan bulan
+      var monthlyTx = localTransactions.filter(function (tx) {
+        return dapatkanBulanTransaksi(tx.tanggal) === selectedMonth;
+      });
+
+      // Filter berdasarkan pembuat/pengguna
+      var finalTx = monthlyTx;
+      if (activeUserFilter !== "Semua") {
+        finalTx = monthlyTx.filter(function (tx) {
+          return (tx.pembuat || "").toLowerCase() === activeUserFilter.toLowerCase();
+        });
+      }
+
+      // Hitung Pemasukan, Pengeluaran & Selisih
+      let totalPemasukan = 0;
+      let totalPengeluaran = 0;
+      
+      // Kategori breakdown mapping
+      let breakdownPengeluaran = {};
+      let breakdownPemasukan = {};
+
+      // Data komparasi Aldo vs Iren
+      let aldoPemasukan = 0;
+      let aldoPengeluaran = 0;
+      let irenPemasukan = 0;
+      let irenPengeluaran = 0;
+
+      finalTx.forEach(function (tx) {
+        var nominal = Number(tx.jumlah) || 0;
+        var isPemasukan = tx.tipe === "Pemasukan";
+        var pembuat = (tx.pembuat || "").toLowerCase();
+        var kategori = tx.kategori || "Lainnya";
+
+        if (isPemasukan) {
+          totalPemasukan += nominal;
+          breakdownPemasukan[kategori] = (breakdownPemasukan[kategori] || 0) + nominal;
+          if (pembuat === "aldo") aldoPemasukan += nominal;
+          if (pembuat === "iren") irenPemasukan += nominal;
+        } else {
+          totalPengeluaran += nominal;
+          breakdownPengeluaran[kategori] = (breakdownPengeluaran[kategori] || 0) + nominal;
+          if (pembuat === "aldo") aldoPengeluaran += nominal;
+          if (pembuat === "iren") irenPengeluaran += nominal;
+        }
+      });
+
+      var saldoBersih = totalPemasukan - totalPengeluaran;
+
+      // Tampilkan ringkasan teks
+      document.getElementById("total-pemasukan").textContent = "Rp " + totalPemasukan.toLocaleString('id-ID');
+      document.getElementById("total-pengeluaran").textContent = "Rp " + totalPengeluaran.toLocaleString('id-ID');
+      
+      var balanceCard = document.getElementById("card-saldo-bersih");
+      var balanceVal = document.getElementById("total-saldo-bersih");
+      
+      if (saldoBersih >= 0) {
+        balanceVal.textContent = "Rp " + saldoBersih.toLocaleString('id-ID');
+        balanceCard.style.background = "linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)";
+      } else {
+        balanceVal.textContent = "- Rp " + Math.abs(saldoBersih).toLocaleString('id-ID');
+        balanceCard.style.background = "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)"; // Oranye/kuning jika defisit
+      }
+
+      // Render Charts & Tables
+      renderChartPengeluaran(breakdownPengeluaran, totalPengeluaran);
+      renderChartPemasukan(breakdownPemasukan, totalPemasukan);
+      renderChartPerbandingan(aldoPemasukan, aldoPengeluaran, irenPemasukan, irenPengeluaran);
+      
+      renderDaftarBreakdown(breakdownPengeluaran, totalPengeluaran, "rekap-pengeluaran-list", "#ef4444");
+      renderDaftarBreakdown(breakdownPemasukan, totalPemasukan, "rekap-pemasukan-list", "#10b981");
+    }
+
+    // Fungsi Render Donut Chart Pengeluaran
+    function renderChartPengeluaran(breakdown, total) {
+      if (chartPengeluaranInstance) {
+        chartPengeluaranInstance.destroy();
+      }
+
+      var canvas = document.getElementById('chart-pengeluaran');
+      var container = document.getElementById('container-chart-pengeluaran');
+      
+      var labels = Object.keys(breakdown);
+      var data = Object.values(breakdown);
+
+      if (labels.length === 0) {
+        canvas.style.display = 'none';
+        var emptyDiv = container.querySelector('.empty-state');
+        if (!emptyDiv) {
+          emptyDiv = document.createElement('div');
+          emptyDiv.className = 'empty-state';
+          emptyDiv.textContent = 'Tidak ada transaksi pengeluaran di bulan ini.';
+          container.appendChild(emptyDiv);
+        }
+        return;
+      } else {
+        canvas.style.display = 'block';
+        var emptyDiv = container.querySelector('.empty-state');
+        if (emptyDiv) emptyDiv.remove();
+      }
+
+      var ctx = canvas.getContext('2d');
+      chartPengeluaranInstance = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: labels,
+          datasets: [{
+            data: data,
+            backgroundColor: [
+              '#f87171', '#fb923c', '#fbbf24', '#a3e635', 
+              '#34d399', '#2dd4bf', '#60a5fa', '#c084fc', 
+              '#f472b6', '#94a3b8', '#a78bfa', '#f43f5e'
+            ],
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: {
+                boxWidth: 10,
+                font: { size: 10 }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    // Fungsi Render Donut Chart Pemasukan
+    function renderChartPemasukan(breakdown, total) {
+      if (chartPemasukanInstance) {
+        chartPemasukanInstance.destroy();
+      }
+
+      var canvas = document.getElementById('chart-pemasukan');
+      var container = document.getElementById('container-chart-pemasukan');
+      
+      var labels = Object.keys(breakdown);
+      var data = Object.values(breakdown);
+
+      if (labels.length === 0) {
+        canvas.style.display = 'none';
+        var emptyDiv = container.querySelector('.empty-state');
+        if (!emptyDiv) {
+          emptyDiv = document.createElement('div');
+          emptyDiv.className = 'empty-state';
+          emptyDiv.textContent = 'Tidak ada transaksi pemasukan di bulan ini.';
+          container.appendChild(emptyDiv);
+        }
+        return;
+      } else {
+        canvas.style.display = 'block';
+        var emptyDiv = container.querySelector('.empty-state');
+        if (emptyDiv) emptyDiv.remove();
+      }
+
+      var ctx = canvas.getContext('2d');
+      chartPemasukanInstance = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: labels,
+          datasets: [{
+            data: data,
+            backgroundColor: [
+              '#34d399', '#60a5fa', '#fbbf24', '#c084fc', 
+              '#2dd4bf', '#fb923c', '#a3e635', '#f87171'
+            ],
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: {
+                boxWidth: 10,
+                font: { size: 10 }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    // Fungsi Render Chart Perbandingan Aldo vs Iren
+    function renderChartPerbandingan(aldoIn, aldoOut, irenIn, irenOut) {
+      if (chartPerbandinganInstance) {
+        chartPerbandinganInstance.destroy();
+      }
+
+      var canvas = document.getElementById('chart-perbandingan');
+      var container = document.getElementById('container-chart-perbandingan');
+
+      // Hanya tampilkan chart perbandingan jika memilih filter pengguna "Semua"
+      if (activeUserFilter !== "Semua") {
+        container.style.display = "none";
+        return;
+      } else {
+        container.style.display = "flex";
+      }
+
+      if (aldoIn === 0 && aldoOut === 0 && irenIn === 0 && irenOut === 0) {
+        canvas.style.display = 'none';
+        var emptyDiv = container.querySelector('.empty-state');
+        if (!emptyDiv) {
+          emptyDiv = document.createElement('div');
+          emptyDiv.className = 'empty-state';
+          emptyDiv.textContent = 'Tidak ada data pembanding di bulan ini.';
+          container.appendChild(emptyDiv);
+        }
+        return;
+      } else {
+        canvas.style.display = 'block';
+        var emptyDiv = container.querySelector('.empty-state');
+        if (emptyDiv) emptyDiv.remove();
+      }
+
+      var ctx = canvas.getContext('2d');
+      chartPerbandinganInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: ['Aldo', 'Iren'],
+          datasets: [
+            {
+              label: 'Pemasukan',
+              data: [aldoIn, irenIn],
+              backgroundColor: '#10b981',
+              borderRadius: 6
+            },
+            {
+              label: 'Pengeluaran',
+              data: [aldoOut, irenOut],
+              backgroundColor: '#ef4444',
+              borderRadius: 6
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                font: { size: 9 },
+                callback: function(value) {
+                  return 'Rp ' + value.toLocaleString('id-ID');
+                }
+              }
+            },
+            x: {
+              ticks: { font: { size: 10 } }
+            }
+          },
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: {
+                boxWidth: 10,
+                font: { size: 10 }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    // Render list rekapitulasi kategori disertai progress bar
+    function renderDaftarBreakdown(breakdown, total, elementId, colorHex) {
+      var listContainer = document.getElementById(elementId);
+      listContainer.innerHTML = "";
+
+      var items = Object.entries(breakdown).map(function([name, value]) {
+        return { name: name, value: value };
+      });
+
+      // Urutkan nominal terbesar ke terkecil
+      items.sort(function (a, b) {
+        return b.value - a.value;
+      });
+
+      if (items.length === 0) {
+        listContainer.innerHTML = `<div style="text-align: center; color: #94a3b8; font-size: 0.85em; padding: 10px;">Belum ada data transaksi.</div>`;
+        return;
+      }
+
+      items.forEach(function (item) {
+        var percentage = total > 0 ? Math.round((item.value / total) * 100) : 0;
+        
+        var card = document.createElement("div");
+        card.className = "breakdown-item";
+        card.innerHTML = `
+          <div class="breakdown-header">
+            <span class="breakdown-cat">${item.name}</span>
+            <div class="breakdown-info">
+              <span>Rp ${item.value.toLocaleString('id-ID')}</span>
+              <span class="breakdown-pct">(${percentage}%)</span>
+            </div>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" style="width: ${percentage}%; background-color: ${colorHex};"></div>
+          </div>
+        `;
+        listContainer.appendChild(card);
+      });
+    }
+
+    window.onload = function () {
+      setBulanDefault();
+      loadDataUntukDashboard();
+    };
+  </script>
+</body>
+
+</html>

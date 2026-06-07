@@ -8,13 +8,16 @@ function initDatabase() {
   var txSheet = ss.getSheetByName("Transaksi");
   if (!txSheet) {
     txSheet = ss.insertSheet("Transaksi");
-    txSheet.appendRow(["ID", "Tanggal", "Kategori", "Jumlah", "Keterangan", "Dibuat Oleh"]);
+    txSheet.appendRow(["ID", "Tanggal", "Kategori", "Jumlah", "Keterangan", "Dibuat Oleh", "Tipe"]);
     txSheet.setFrozenRows(1); 
   } else {
-    // Memastikan header kolom ke-6 ada jika sheet sudah pernah terbuat sebelumnya
-    var headers = txSheet.getRange(1, 1, 1, 6).getValues()[0];
+    // Memastikan header kolom ke-6 dan ke-7 ada jika sheet sudah pernah terbuat sebelumnya
+    var headers = txSheet.getRange(1, 1, 1, 7).getValues()[0];
     if (!headers[5]) {
       txSheet.getRange(1, 6).setValue("Dibuat Oleh");
+    }
+    if (!headers[6]) {
+      txSheet.getRange(1, 7).setValue("Tipe");
     }
   }
   
@@ -35,40 +38,47 @@ function initDatabase() {
       ["CAT-6", "Lainnya"],
       ["CAT-7", "Makanan & Minuman"],
       ["CAT-8", "Transportasi"],
-      ["CAT-9", "Belanja"]
+      ["CAT-9", "Belanja"],
+      ["CAT-10", "Gaji"],
+      ["CAT-11", "Pemasukan Lain"]
     ];
     for (var i = 0; i < defaultCats.length; i++) {
       catSheet.appendRow(defaultCats[i]);
     }
   }
 
-  // 3. Sheet Aset (Aset Keuangan)
+  // 3. Sheet Aset (Aset Keuangan) — dengan kolom Bulan untuk tracking per bulan
   var asetSheet = ss.getSheetByName("Aset");
   if (!asetSheet) {
     asetSheet = ss.insertSheet("Aset");
-    asetSheet.appendRow(["Nama Aset", "Iren", "Aldo"]);
+    asetSheet.appendRow(["Nama Aset", "Iren", "Aldo", "Bulan"]);
     asetSheet.setFrozenRows(1);
     
     // Sesuai dengan data pada gambar user
+    var nowAset = new Date();
+    var asetPeriod = (nowAset.getMonth() + 1) + "/" + nowAset.getFullYear();
     var defaultAssets = [
-      ["BCA", 8000000, 60000],
-      ["BRI", 7000000, 281000],
-      ["Gopay", 14760, 0],
-      ["Shopee", 4051, 0],
-      ["OVO", 27156, 0],
-      ["Cash", 300000, 30000],
-      ["Bibit", 0, 0],
-      ["Bibit Gerry", 0, 0],
-      ["Saham", 1000000, 4000000]
+      ["BCA", 8000000, 60000, asetPeriod],
+      ["BRI", 7000000, 281000, asetPeriod],
+      ["Gopay", 14760, 0, asetPeriod],
+      ["Shopee", 4051, 0, asetPeriod],
+      ["OVO", 27156, 0, asetPeriod],
+      ["Cash", 300000, 30000, asetPeriod],
+      ["Bibit", 0, 0, asetPeriod],
+      ["Bibit Gerry", 0, 0, asetPeriod],
+      ["Saham", 1000000, 4000000, asetPeriod]
     ];
     for (var i = 0; i < defaultAssets.length; i++) {
       asetSheet.appendRow(defaultAssets[i]);
     }
   } else {
     // Memastikan header kolom ke-2 diganti dari Awrin ke Iren jika sudah ada
-    var headers = asetSheet.getRange(1, 1, 1, 3).getValues()[0];
+    var headers = asetSheet.getRange(1, 1, 1, 4).getValues()[0];
     if (headers[1] === "Awrin") {
       asetSheet.getRange(1, 2).setValue("Iren");
+    }
+    if (!headers[3]) {
+      asetSheet.getRange(1, 4).setValue("Bulan");
     }
   }
 
@@ -76,25 +86,33 @@ function initDatabase() {
   var angSheet = ss.getSheetByName("Anggaran");
   if (!angSheet) {
     angSheet = ss.insertSheet("Anggaran");
-    angSheet.appendRow(["User", "Kategori", "Nominal"]);
+    angSheet.appendRow(["User", "Kategori", "Nominal", "Bulan"]);
     angSheet.setFrozenRows(1);
     
     // Sesuai dengan data gambar user
+    var now = new Date();
+    var currentPeriod = (now.getMonth() + 1) + "/" + now.getFullYear(); // e.g. "6/2026"
     var defaultBudgets = [
-      ["Aldo", "Kos", 752500],
-      ["Aldo", "Auto", 0],
-      ["Aldo", "Makan", 1600000],
-      ["Aldo", "Bensin", 300000],
-      ["Aldo", "Lainnya", 1000000],
-      ["Iren", "Kos", 500000],
-      ["Iren", "Auto", 991100],
-      ["Iren", "Makan", 1400000],
-      ["Iren", "Bensin", 200000],
-      ["Iren", "Gerry", 0],
-      ["Iren", "Lainnya", 1200000]
+      ["Aldo", "Kos", 752500, currentPeriod],
+      ["Aldo", "Auto", 0, currentPeriod],
+      ["Aldo", "Makan", 1600000, currentPeriod],
+      ["Aldo", "Bensin", 300000, currentPeriod],
+      ["Aldo", "Lainnya", 1000000, currentPeriod],
+      ["Iren", "Kos", 500000, currentPeriod],
+      ["Iren", "Auto", 991100, currentPeriod],
+      ["Iren", "Makan", 1400000, currentPeriod],
+      ["Iren", "Bensin", 200000, currentPeriod],
+      ["Iren", "Gerry", 0, currentPeriod],
+      ["Iren", "Lainnya", 1200000, currentPeriod]
     ];
     for (var i = 0; i < defaultBudgets.length; i++) {
       angSheet.appendRow(defaultBudgets[i]);
+    }
+  } else {
+    // Memastikan header kolom ke-4 ada
+    var headers = angSheet.getRange(1, 1, 1, 4).getValues()[0];
+    if (!headers[3]) {
+      angSheet.getRange(1, 4).setValue("Bulan");
     }
   }
 }
@@ -115,7 +133,8 @@ function tambahData(data) {
     data.kategori,
     Number(data.jumlah),
     data.keterangan,
-    data.pembuat // Menyimpan siapa yang mencatat ("Aldo" atau "Iren")
+    data.pembuat, // Menyimpan siapa yang mencatat ("Aldo" atau "Iren")
+    data.tipe || "Pengeluaran" // Menyimpan tipe transaksi ("Pengeluaran" atau "Pemasukan")
   ]);
   
   return { status: "success", message: "Data berhasil disimpan oleh " + data.pembuat, id: id };
@@ -140,7 +159,8 @@ function ambilSemuaData() {
       kategori: dataValues[i][2],
       jumlah: Number(dataValues[i][3]) || 0,
       keterangan: dataValues[i][4],
-      pembuat: dataValues[i][5] || "Tidak Diketahui"
+      pembuat: dataValues[i][5] || "Tidak Diketahui",
+      tipe: dataValues[i][6] || "Pengeluaran"
     });
   }
   
@@ -164,6 +184,7 @@ function ubahData(id, dataBaru) {
       sheet.getRange(barisKe, 4).setValue(Number(dataBaru.jumlah));
       sheet.getRange(barisKe, 5).setValue(dataBaru.keterangan);
       sheet.getRange(barisKe, 6).setValue(dataBaru.pembuat); // Update pembuat
+      sheet.getRange(barisKe, 7).setValue(dataBaru.tipe || "Pengeluaran"); // Update tipe
       return { status: "success", message: "Data berhasil diubah!" };
     }
   }
@@ -260,17 +281,26 @@ function hapusKategori(id) {
 }
 
 /**
- * 9. READ ASET: Ambil semua data aset keuangan
+ * 9. READ ASET: Ambil semua data aset keuangan berdasarkan bulan
  */
-function ambilSemuaAset() {
+function ambilSemuaAset(bulan, tahun) {
   initDatabase();
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName("Aset");
   var dataValues = sheet.getDataRange().getDisplayValues();
   
+  var targetMonth = (bulan !== undefined && bulan !== null) ? Number(bulan) : (new Date().getMonth() + 1);
+  var targetYear = (tahun !== undefined && tahun !== null) ? Number(tahun) : new Date().getFullYear();
+  var targetPeriod = targetMonth + "/" + targetYear; // e.g. "6/2026"
+  
   var hasil = [];
   for (var i = 1; i < dataValues.length; i++) {
     if (!dataValues[i][0]) continue; // Skip baris kosong
+    
+    var periodVal = dataValues[i][3] ? String(dataValues[i][3]).trim() : "";
+    // Jika tidak ada period, anggap cocok (data lama)
+    if (periodVal !== "" && periodVal !== targetPeriod) continue;
+    
     // Menghilangkan format rupiah jika ada untuk diconvert ke number di JS
     var irenStr = dataValues[i][1] ? String(dataValues[i][1]) : "";
     var aldoStr = dataValues[i][2] ? String(dataValues[i][2]) : "";
@@ -286,18 +316,24 @@ function ambilSemuaAset() {
 }
 
 /**
- * 10. UPDATE ASET: Memperbarui nominal saldo aset
+ * 10. UPDATE ASET: Memperbarui nominal saldo aset berdasarkan bulan
  */
-function ubahAset(namaAset, irenVal, aldoVal) {
+function ubahAset(namaAset, irenVal, aldoVal, bulan, tahun) {
   initDatabase();
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName("Aset");
   var dataValues = sheet.getDataRange().getValues();
   
+  var targetMonth = (bulan !== undefined && bulan !== null) ? Number(bulan) : (new Date().getMonth() + 1);
+  var targetYear = (tahun !== undefined && tahun !== null) ? Number(tahun) : new Date().getFullYear();
+  var targetPeriod = targetMonth + "/" + targetYear;
+  
   for (var i = 1; i < dataValues.length; i++) {
-    if (dataValues[i][0] === namaAset) {
+    var periodVal = dataValues[i][3] ? String(dataValues[i][3]).trim() : "";
+    if (dataValues[i][0] === namaAset && (periodVal === targetPeriod || (!periodVal && targetPeriod === (new Date().getMonth() + 1) + "/" + new Date().getFullYear()))) {
       sheet.getRange(i + 1, 2).setValue(Number(irenVal));
       sheet.getRange(i + 1, 3).setValue(Number(aldoVal));
+      sheet.getRange(i + 1, 4).setValue(targetPeriod);
       return { status: "success", message: "Aset '" + namaAset + "' berhasil diperbarui!" };
     }
   }
@@ -305,37 +341,48 @@ function ubahAset(namaAset, irenVal, aldoVal) {
 }
 
 /**
- * 11. CREATE ASET: Menambahkan instrumen aset baru
+ * 11. CREATE ASET: Menambahkan instrumen aset baru (per bulan)
  */
-function tambahAset(namaAset, irenVal, aldoVal) {
+function tambahAset(namaAset, irenVal, aldoVal, bulan, tahun) {
   initDatabase();
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName("Aset");
   var dataValues = sheet.getDataRange().getValues();
   
+  var targetMonth = (bulan !== undefined && bulan !== null) ? Number(bulan) : (new Date().getMonth() + 1);
+  var targetYear = (tahun !== undefined && tahun !== null) ? Number(tahun) : new Date().getFullYear();
+  var targetPeriod = targetMonth + "/" + targetYear;
+  
   for (var i = 1; i < dataValues.length; i++) {
-    if (dataValues[i][0] === namaAset) {
+    var periodVal = dataValues[i][3] ? String(dataValues[i][3]).trim() : "";
+    if (dataValues[i][0] === namaAset && (periodVal === targetPeriod || (!periodVal && targetPeriod === (new Date().getMonth() + 1) + "/" + new Date().getFullYear()))) {
       sheet.getRange(i + 1, 2).setValue(Number(irenVal));
       sheet.getRange(i + 1, 3).setValue(Number(aldoVal));
-      return { status: "success", message: "Aset '" + namaAset + "' berhasil diperbarui!" };
+      sheet.getRange(i + 1, 4).setValue(targetPeriod);
+      return { status: "success", message: "Aset '" + namaAset + "' periode " + targetPeriod + " berhasil diperbarui!" };
     }
   }
   
-  sheet.appendRow([namaAset, Number(irenVal), Number(aldoVal)]);
-  return { status: "success", message: "Aset '" + namaAset + "' berhasil ditambahkan!" };
+  sheet.appendRow([namaAset, Number(irenVal), Number(aldoVal), targetPeriod]);
+  return { status: "success", message: "Aset '" + namaAset + "' periode " + targetPeriod + " berhasil ditambahkan!" };
 }
 
 /**
- * 12. DELETE ASET: Menghapus instrumen aset
+ * 12. DELETE ASET: Menghapus instrumen aset berdasarkan bulan
  */
-function hapusAset(namaAset) {
+function hapusAset(namaAset, bulan, tahun) {
   initDatabase();
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName("Aset");
   var dataValues = sheet.getDataRange().getValues();
   
+  var targetMonth = (bulan !== undefined && bulan !== null) ? Number(bulan) : (new Date().getMonth() + 1);
+  var targetYear = (tahun !== undefined && tahun !== null) ? Number(tahun) : new Date().getFullYear();
+  var targetPeriod = targetMonth + "/" + targetYear;
+  
   for (var i = 1; i < dataValues.length; i++) {
-    if (dataValues[i][0] === namaAset) {
+    var periodVal = dataValues[i][3] ? String(dataValues[i][3]).trim() : "";
+    if (dataValues[i][0] === namaAset && (periodVal === targetPeriod || (!periodVal && targetPeriod === (new Date().getMonth() + 1) + "/" + new Date().getFullYear()))) {
       sheet.deleteRow(i + 1);
       return { status: "success", message: "Aset berhasil dihapus!" };
     }
@@ -346,7 +393,7 @@ function hapusAset(namaAset) {
 /**
  * 13. READ ANGGARAN: Mengambil data nominal anggaran dan menghitung realisasi bulanan
  */
-function ambilSemuaAnggaran() {
+function ambilSemuaAnggaran(bulan, tahun) {
   initDatabase();
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   
@@ -364,20 +411,28 @@ function ambilSemuaAnggaran() {
   var angSheet = ss.getSheetByName("Anggaran");
   var angValues = angSheet.getDataRange().getValues();
   var budgetMap = {};
+  
+  var targetMonth = (bulan !== undefined && bulan !== null) ? Number(bulan) - 1 : new Date().getMonth(); // 0-indexed
+  var targetYear = (tahun !== undefined && tahun !== null) ? Number(tahun) : new Date().getFullYear();
+  var targetPeriod = (targetMonth + 1) + "/" + targetYear; // e.g. "6/2026"
+  
   for (var i = 1; i < angValues.length; i++) {
     var user = angValues[i][0];
     var cat = angValues[i][1];
     var nominal = Number(angValues[i][2]) || 0;
-    budgetMap[user + "_" + cat] = nominal;
+    var periodVal = angValues[i][3]; // Kolom Bulan
+    
+    if (!periodVal || String(periodVal).trim() === "" || String(periodVal) === targetPeriod) {
+      budgetMap[user + "_" + cat] = nominal;
+    }
   }
   
-  // Ambil semua transaksi pada bulan & tahun aktif saat ini
+  // Ambil semua transaksi
   var txSheet = ss.getSheetByName("Transaksi");
   var txValues = txSheet.getDataRange().getValues();
   
-  var now = new Date();
-  var currentYear = now.getFullYear();
-  var currentMonth = now.getMonth(); // 0-indexed
+  var targetMonth = (bulan !== undefined && bulan !== null) ? Number(bulan) - 1 : new Date().getMonth(); // 0-indexed
+  var targetYear = (tahun !== undefined && tahun !== null) ? Number(tahun) : new Date().getFullYear();
   
   var txMap = {};
   for (var i = 1; i < txValues.length; i++) {
@@ -392,7 +447,7 @@ function ambilSemuaAnggaran() {
       }
     }
     
-    if (dateObj && dateObj.getFullYear() === currentYear && dateObj.getMonth() === currentMonth) {
+    if (dateObj && dateObj.getFullYear() === targetYear && dateObj.getMonth() === targetMonth) {
       var cat = txValues[i][2];
       var amount = Number(txValues[i][3]) || 0;
       var user = txValues[i][5];
@@ -428,21 +483,31 @@ function ambilSemuaAnggaran() {
 /**
  * 14. UPDATE ANGGARAN: Memperbarui nominal budget limit kategori
  */
-function ubahAnggaran(user, kategori, nominal) {
+function ubahAnggaran(user, kategori, nominal, bulan, tahun) {
   initDatabase();
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName("Anggaran");
   var dataValues = sheet.getDataRange().getValues();
   
+  var targetMonth = (bulan !== undefined && bulan !== null) ? Number(bulan) : (new Date().getMonth() + 1);
+  var targetYear = (tahun !== undefined && tahun !== null) ? Number(tahun) : new Date().getFullYear();
+  var targetPeriod = targetMonth + "/" + targetYear; // e.g. "6/2026"
+  
   for (var i = 1; i < dataValues.length; i++) {
-    if (dataValues[i][0] === user && dataValues[i][1] === kategori) {
-      sheet.getRange(i + 1, 3).setValue(Number(nominal));
-      return { status: "success", message: "Anggaran " + kategori + " untuk " + user + " berhasil diperbarui!" };
+    var u = dataValues[i][0];
+    var c = dataValues[i][1];
+    var p = dataValues[i][3]; // Kolom Bulan
+    
+    if (u === user && c === kategori && (p === targetPeriod || (!p && targetPeriod === (new Date().getMonth() + 1) + "/" + new Date().getFullYear()))) {
+      var barisKe = i + 1;
+      sheet.getRange(barisKe, 3).setValue(Number(nominal));
+      sheet.getRange(barisKe, 4).setValue(targetPeriod);
+      return { status: "success", message: "Anggaran " + kategori + " untuk " + user + " periode " + targetPeriod + " berhasil diperbarui!" };
     }
   }
   
-  sheet.appendRow([user, kategori, Number(nominal)]);
-  return { status: "success", message: "Anggaran " + kategori + " untuk " + user + " berhasil ditambahkan!" };
+  sheet.appendRow([user, kategori, Number(nominal), targetPeriod]);
+  return { status: "success", message: "Anggaran " + kategori + " untuk " + user + " periode " + targetPeriod + " berhasil ditambahkan!" };
 }
 
 /**

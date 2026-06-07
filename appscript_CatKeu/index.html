@@ -216,6 +216,14 @@
       </div>
 
       <div class="form-group">
+        <label>Jenis Transaksi</label>
+        <div class="type-selector" style="display: flex; gap: 6px; background: #f1f5f9; padding: 4px; border-radius: 12px; margin-bottom: 8px;">
+          <button type="button" class="type-btn" id="type-pengeluaran" onclick="pilihTipe('Pengeluaran')" style="flex: 1; padding: 10px; border: none; border-radius: 8px; font-size: 0.85em; font-weight: 600; cursor: pointer; transition: all 0.2s ease;">Pengeluaran</button>
+          <button type="button" class="type-btn" id="type-pemasukan" onclick="pilihTipe('Pemasukan')" style="flex: 1; padding: 10px; border: none; border-radius: 8px; font-size: 0.85em; font-weight: 600; cursor: pointer; transition: all 0.2s ease;">Pemasukan</button>
+        </div>
+      </div>
+
+      <div class="form-group">
         <label>Tanggal Transaksi</label>
         <input type="date" id="tanggal">
       </div>
@@ -253,6 +261,10 @@
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2" ry="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
           <span>Transaksi</span>
         </a>
+        <a href="javascript:void(0)" onclick="keHalamanDashboard()" class="nav-tab">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>
+          <span>Dashboard</span>
+        </a>
         <a href="javascript:void(0)" onclick="keHalamanAnggaran()" class="nav-tab">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
           <span>Anggaran</span>
@@ -271,6 +283,7 @@
     <script>
       let currentUser = "<?= currentUser ?>";
       let editingTransactionId = null;
+      let currentTipe = "Pengeluaran";
 
       function inisialisasiUser() {
         pilihUser(currentUser);
@@ -283,6 +296,28 @@
         });
         var activeBtn = document.getElementById('btn-' + nama.toLowerCase());
         if (activeBtn) activeBtn.classList.add('active');
+      }
+
+      function pilihTipe(tipe) {
+        currentTipe = tipe;
+        var btnPengeluaran = document.getElementById('type-pengeluaran');
+        var btnPemasukan = document.getElementById('type-pemasukan');
+        
+        if (tipe === "Pengeluaran") {
+          btnPengeluaran.style.background = "#ef4444";
+          btnPengeluaran.style.color = "white";
+          btnPemasukan.style.background = "transparent";
+          btnPemasukan.style.color = "#64748b";
+        } else {
+          btnPemasukan.style.background = "#10b981";
+          btnPemasukan.style.color = "white";
+          btnPengeluaran.style.background = "transparent";
+          btnPengeluaran.style.color = "#64748b";
+        }
+      }
+
+      function keHalamanDashboard() {
+        window.top.location.href = "<?= scriptUrl ?>?page=dashboard&user=" + currentUser;
       }
 
       function keHalamanAnggaran() {
@@ -330,7 +365,8 @@
           kategori: document.getElementById('kategori').value,
           jumlah: document.getElementById('jumlah').value,
           keterangan: document.getElementById('keterangan').value,
-          pembuat: currentUser
+          pembuat: currentUser,
+          tipe: currentTipe
         };
 
         if(!data.tanggal) {
@@ -391,6 +427,10 @@
               
               var pembuat = item.pembuat || "Aldo";
               var badgeClass = "badge-" + pembuat.toLowerCase();
+              
+              var isPemasukan = item.tipe === "Pemasukan";
+              var typeSign = isPemasukan ? "+" : "-";
+              var typeColor = isPemasukan ? "#10b981" : "#ef4444";
 
               card.innerHTML = `
                 <div class="card-left">
@@ -399,10 +439,10 @@
                   <div class="card-desc">${item.keterangan || "-"}</div>
                 </div>
                 <div class="card-right">
-                  <div class="card-amount">Rp ${Number(item.jumlah).toLocaleString('id-ID')}</div>
+                  <div class="card-amount" style="color: ${typeColor}; font-weight: 700;">${typeSign} Rp ${Number(item.jumlah).toLocaleString('id-ID')}</div>
                   <div><span class="badge ${badgeClass}">${pembuat}</span></div>
                   <div class="card-actions">
-                    <button class="action-btn edit" data-id="${item.id}" data-tanggal="${item.tanggal}" data-kategori="${item.kategori}" data-jumlah="${item.jumlah}" data-keterangan="${item.keterangan || ""}" data-pembuat="${pembuat}" onclick="mulaiEditTransaksi(this)">Edit</button>
+                    <button class="action-btn edit" data-id="${item.id}" data-tanggal="${item.tanggal}" data-kategori="${item.kategori}" data-jumlah="${item.jumlah}" data-keterangan="${item.keterangan || ""}" data-pembuat="${pembuat}" data-tipe="${item.tipe || "Pengeluaran"}" onclick="mulaiEditTransaksi(this)">Edit</button>
                     <button class="action-btn delete" onclick="hapusDariSheets('${item.id}')">Hapus</button>
                   </div>
                 </div>
@@ -422,6 +462,7 @@
         document.getElementById('keterangan').value = btn.dataset.keterangan;
         
         pilihUser(btn.dataset.pembuat);
+        pilihTipe(btn.dataset.tipe || "Pengeluaran");
         
         var submitBtn = document.querySelector('button.primary');
         submitBtn.textContent = "Simpan Perubahan";
@@ -448,6 +489,7 @@
         document.getElementById('jumlah').value = "";
         document.getElementById('keterangan').value = "";
         setTodayDate();
+        pilihTipe("Pengeluaran");
         
         var submitBtn = document.querySelector('button.primary');
         submitBtn.textContent = "Simpan Transaksi";
@@ -484,6 +526,7 @@
       window.onload = function() {
         inisialisasiUser();
         setTodayDate();
+        pilihTipe("Pengeluaran");
         loadDataDariSheets();
         loadKategoriDropdown();
       };
