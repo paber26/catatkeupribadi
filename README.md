@@ -1,20 +1,13 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
-</div>
+# Jurnal Keuangan Bersama
 
-# Run and deploy your AI Studio app
+Aplikasi web pengelolaan keuangan keluarga mandiri berbasis seluler yang terintegrasi langsung dengan Google Sheets sebagai basis data.
 
-This contains everything you need to run your app locally.
+## Struktur Repositori
 
-View your app in AI Studio: https://ai.studio/apps/9ae3a3c8-1d08-4eb7-9a85-fc13deb778a2
-
-## Run Locally
-
-**Prerequisites:**  Node.js
-
-
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+- `index.html`: Berkas pembungkus iFrame utama untuk mendeploy aplikasi pada GitHub Pages.
+- `appscript_CatKeu/`: Direktori yang berisi kode sumber utama Google Apps Script:
+  - `Kode.gs`: Logika backend/server-side untuk CRUD data ke Google Sheets, otentikasi data, dan perhitungan anggaran.
+  - `index.html`: Antarmuka riwayat transaksi.
+  - `anggaran.html`: Antarmuka manajemen batasan anggaran bulanan & sisa hari.
+  - `kategori.html`: Antarmuka pengelolaan kategori pengeluaran.
+  - `aset.html`: Antarmuka pemantauan saldo aset & dompet keuangan.
