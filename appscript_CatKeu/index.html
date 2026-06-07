@@ -202,6 +202,87 @@
       @keyframes spin {
         to { transform: rotate(360deg); }
       }
+
+      /* ========= Month Picker Styles ========= */
+      .month-picker-card {
+        background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+        border-radius: 16px;
+        padding: 18px 14px;
+        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        box-shadow: 0 4px 16px rgba(99, 102, 241, 0.25);
+        user-select: none;
+      }
+
+      .month-picker-card .arrow-btn {
+        width: 38px;
+        height: 38px;
+        border: none;
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.18);
+        color: #ffffff;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+        flex-shrink: 0;
+      }
+
+      .month-picker-card .arrow-btn:hover {
+        background: rgba(255, 255, 255, 0.3);
+        transform: scale(1.08);
+      }
+
+      .month-picker-card .arrow-btn:active {
+        transform: scale(0.95);
+      }
+
+      .month-picker-center {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 2px;
+      }
+
+      .month-picker-month {
+        font-size: 1.2em;
+        font-weight: 800;
+        color: #ffffff;
+        letter-spacing: 0.3px;
+        line-height: 1.2;
+      }
+
+      .month-picker-year {
+        font-size: 0.8em;
+        font-weight: 600;
+        color: rgba(255, 255, 255, 0.75);
+        letter-spacing: 1px;
+      }
+
+      .month-picker-today-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        margin-top: 6px;
+        padding: 4px 10px;
+        border: 1px solid rgba(255, 255, 255, 0.35);
+        border-radius: 20px;
+        background: rgba(255, 255, 255, 0.12);
+        color: rgba(255, 255, 255, 0.9);
+        font-size: 0.65em;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        letter-spacing: 0.3px;
+      }
+
+      .month-picker-today-btn:hover {
+        background: rgba(255, 255, 255, 0.25);
+        border-color: rgba(255, 255, 255, 0.5);
+      }
     </style>
   </head>
   <body>
@@ -251,6 +332,25 @@
       </div>
 
       <h3>Riwayat Transaksi</h3>
+
+      <!-- Month Picker for filtering transactions -->
+      <div class="month-picker-card">
+        <button class="arrow-btn" onclick="pindahBulan(-1)" aria-label="Bulan sebelumnya">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div class="month-picker-center">
+          <span class="month-picker-month" id="picker-month-name">Juni</span>
+          <span class="month-picker-year" id="picker-year">2026</span>
+          <button class="month-picker-today-btn" onclick="keBulanIni()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            Bulan Ini
+          </button>
+        </div>
+        <button class="arrow-btn" onclick="pindahBulan(1)" aria-label="Bulan berikutnya">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+      </div>
+
       <div class="history-list" id="riwayat-list">
         <!-- Diisi secara dinamis -->
       </div>
@@ -284,6 +384,11 @@
       let currentUser = "<?= currentUser ?>";
       let editingTransactionId = null;
       let currentTipe = "Pengeluaran";
+      let allTransactions = [];
+      let selectedBulan = new Date().getMonth(); // 0-indexed
+      let selectedTahun = new Date().getFullYear();
+
+      var monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
 
       function inisialisasiUser() {
         pilihUser(currentUser);
@@ -415,42 +520,94 @@
         `;
         google.script.run
           .withSuccessHandler(function(dataArray) {
-            listContainer.innerHTML = "";
-            if (dataArray.length === 0) {
-              listContainer.innerHTML = `<div style="text-align: center; color: #64748b; padding: 20px; font-size: 0.9em;">Belum ada riwayat transaksi.</div>`;
-              return;
-            }
-
-            dataArray.reverse().forEach(function(item) {
-              var card = document.createElement("div");
-              card.className = "history-card";
-              
-              var pembuat = item.pembuat || "Aldo";
-              var badgeClass = "badge-" + pembuat.toLowerCase();
-              
-              var isPemasukan = item.tipe === "Pemasukan";
-              var typeSign = isPemasukan ? "+" : "-";
-              var typeColor = isPemasukan ? "#10b981" : "#ef4444";
-
-              card.innerHTML = `
-                <div class="card-left">
-                  <div class="card-category">${item.kategori}</div>
-                  <div class="card-date">${item.tanggal}</div>
-                  <div class="card-desc">${item.keterangan || "-"}</div>
-                </div>
-                <div class="card-right">
-                  <div class="card-amount" style="color: ${typeColor}; font-weight: 700;">${typeSign} Rp ${Number(item.jumlah).toLocaleString('id-ID')}</div>
-                  <div><span class="badge ${badgeClass}">${pembuat}</span></div>
-                  <div class="card-actions">
-                    <button class="action-btn edit" data-id="${item.id}" data-tanggal="${item.tanggal}" data-kategori="${item.kategori}" data-jumlah="${item.jumlah}" data-keterangan="${item.keterangan || ""}" data-pembuat="${pembuat}" data-tipe="${item.tipe || "Pengeluaran"}" onclick="mulaiEditTransaksi(this)">Edit</button>
-                    <button class="action-btn delete" onclick="hapusDariSheets('${item.id}')">Hapus</button>
-                  </div>
-                </div>
-              `;
-              listContainer.appendChild(card);
-            });
+            allTransactions = dataArray;
+            renderFilteredTransactions();
           })
           .ambilSemuaData();
+      }
+
+      function dapatkanBulanTransaksi(dateStr) {
+        if (!dateStr) return { month: -1, year: -1 };
+        var parts = dateStr.split("/");
+        if (parts.length === 3) {
+          return { month: parseInt(parts[1], 10) - 1, year: parseInt(parts[2], 10) };
+        }
+        var partsDash = dateStr.split("-");
+        if (partsDash.length === 3) {
+          return { month: parseInt(partsDash[1], 10) - 1, year: parseInt(partsDash[0], 10) };
+        }
+        return { month: -1, year: -1 };
+      }
+
+      function renderFilteredTransactions() {
+        var listContainer = document.getElementById("riwayat-list");
+        listContainer.innerHTML = "";
+
+        var filtered = allTransactions.filter(function(item) {
+          var d = dapatkanBulanTransaksi(item.tanggal);
+          return d.month === selectedBulan && d.year === selectedTahun;
+        });
+
+        if (filtered.length === 0) {
+          listContainer.innerHTML = `<div style="text-align: center; color: #64748b; padding: 20px; font-size: 0.9em;">Belum ada riwayat transaksi di bulan ${monthNames[selectedBulan]} ${selectedTahun}.</div>`;
+          return;
+        }
+
+        filtered.reverse().forEach(function(item) {
+          var card = document.createElement("div");
+          card.className = "history-card";
+          
+          var pembuat = item.pembuat || "Aldo";
+          var badgeClass = "badge-" + pembuat.toLowerCase();
+          
+          var isPemasukan = item.tipe === "Pemasukan";
+          var typeSign = isPemasukan ? "+" : "-";
+          var typeColor = isPemasukan ? "#10b981" : "#ef4444";
+
+          card.innerHTML = `
+            <div class="card-left">
+              <div class="card-category">${item.kategori}</div>
+              <div class="card-date">${item.tanggal}</div>
+              <div class="card-desc">${item.keterangan || "-"}</div>
+            </div>
+            <div class="card-right">
+              <div class="card-amount" style="color: ${typeColor}; font-weight: 700;">${typeSign} Rp ${Number(item.jumlah).toLocaleString('id-ID')}</div>
+              <div><span class="badge ${badgeClass}">${pembuat}</span></div>
+              <div class="card-actions">
+                <button class="action-btn edit" data-id="${item.id}" data-tanggal="${item.tanggal}" data-kategori="${item.kategori}" data-jumlah="${item.jumlah}" data-keterangan="${item.keterangan || ""}" data-pembuat="${pembuat}" data-tipe="${item.tipe || "Pengeluaran"}" onclick="mulaiEditTransaksi(this)">Edit</button>
+                <button class="action-btn delete" onclick="hapusDariSheets('${item.id}')">Hapus</button>
+              </div>
+            </div>
+          `;
+          listContainer.appendChild(card);
+        });
+      }
+
+      // ========== Month Picker Functions ==========
+      function pindahBulan(delta) {
+        selectedBulan += delta;
+        if (selectedBulan > 11) {
+          selectedBulan = 0;
+          selectedTahun++;
+        } else if (selectedBulan < 0) {
+          selectedBulan = 11;
+          selectedTahun--;
+        }
+        renderMonthPicker();
+        renderFilteredTransactions();
+      }
+
+      function keBulanIni() {
+        var now = new Date();
+        selectedBulan = now.getMonth();
+        selectedTahun = now.getFullYear();
+        renderMonthPicker();
+        renderFilteredTransactions();
+      }
+
+      function renderMonthPicker() {
+        document.getElementById("picker-month-name").textContent = monthNames[selectedBulan];
+        document.getElementById("picker-year").textContent = selectedTahun;
       }
 
       function mulaiEditTransaksi(btn) {
@@ -527,6 +684,7 @@
         inisialisasiUser();
         setTodayDate();
         pilihTipe("Pengeluaran");
+        renderMonthPicker();
         loadDataDariSheets();
         loadKategoriDropdown();
       };
