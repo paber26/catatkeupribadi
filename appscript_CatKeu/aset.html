@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <base target="_top">
+  <style>
+    /* Reset & Base Styles */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: #f1f5f9;
+      display: flex;
+      justify-content: center;
+      min-height: 100vh;
+    }
+
+    /* App container shell resembling mobile screen */
+    .app-container {
+      width: 100%;
+      max-width: 480px;
+      background-color: #ffffff;
+      min-height: 100vh;
+      position: relative;
+      padding: 24px 20px 85px 20px;
+      /* Space at bottom for navigation bar */
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.05);
+      display: flex;
+      flex-direction: column;
+    }
+
+    h2 {
+      color: #0f172a;
+      margin-bottom: 20px;
+      text-align: center;
+      font-size: 1.4em;
+      font-weight: 700;
+    }
+
+    h3 {
+      color: #1e293b;
+      margin: 25px 0 15px 0;
+      font-size: 1.1em;
+      font-weight: 700;
+    }
+
+    /* Segmented Toggle Control for User Switcher */
+    .user-selector {
+      display: flex;
+      justify-content: center;
+      gap: 6px;
+      margin-bottom: 25px;
+      background: #f1f5f9;
+      padding: 4px;
+      border-radius: 12px;
+    }
+
+    .user-btn {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.85em;
+      font-weight: 600;
+      cursor: pointer;
+      background: transparent;
+      color: #64748b;
+      transition: all 0.2s ease;
+    }
+
+    .user-btn.active {
+      background: #ffffff;
+      color: #0f172a;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+
+    /* Form inputs styling */
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: 600;
+      font-size: 0.8em;
+      color: #475569;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      box-sizing: border-box;
+      font-size: 0.9em;
+      background-color: #f8fafc;
+      outline: none;
+      transition: all 0.2s ease;
+    }
+
+    input:focus {
+      border-color: #007bff;
+      background-color: #ffffff;
+      box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.15);
+    }
+
+    /* Buttons container */
+    .btn-container {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    button.primary {
+      flex: 1;
+      padding: 12px;
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.9em;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+
+    button.primary:hover {
+      background: #0056b3;
+    }
+
+    /* Asset Table Section styled for mobile responsive viewport */
+    .table-wrapper {
+      width: 100%;
+      overflow-x: auto;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      margin-top: 10px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85em;
+    }
+
+    th,
+    td {
+      padding: 12px 10px;
+      text-align: left;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    th {
+      background-color: #f8fafc;
+      font-weight: 600;
+      color: #475569;
+      border-bottom: 2px solid #e2e8f0;
+    }
+
+    tr:nth-child(even) {
+      background-color: #f8fafc;
+    }
+
+    .action-btn {
+      padding: 4px 8px;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.8em;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s;
+      display: inline-block;
+    }
+
+    .action-btn:hover {
+      opacity: 0.85;
+    }
+
+    .action-btn.edit {
+      background: #e0f2fe;
+      color: #0369a1;
+      margin-right: 4px;
+    }
+
+    .action-btn.delete {
+      background: #fee2e2;
+      color: #b91c1c;
+    }
+
+    .highlight-total {
+      background-color: #fef08a !important;
+      font-weight: 700;
+      color: #1e293b;
+    }
+
+    /* Sticky Bottom Navigation menu */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: 480px;
+      height: 65px;
+      background: #ffffff;
+      border-top: 1px solid #e2e8f0;
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.05);
+      z-index: 1000;
+    }
+
+    .nav-tab {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: none;
+      border: none;
+      color: #64748b;
+      cursor: pointer;
+      font-size: 0.7em;
+      font-weight: 600;
+      text-decoration: none;
+      flex: 1;
+      height: 100%;
+      transition: all 0.2s ease;
+    }
+
+    .nav-tab svg {
+      margin-bottom: 3px;
+      color: #64748b;
+      transition: color 0.2s ease;
+    }
+
+    .nav-tab.active {
+      color: #007bff;
+    }
+
+    .nav-tab.active svg {
+      color: #007bff;
+    }
+
+    /* CSS Loading Spinner */
+    .loading-spinner {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 30px;
+      color: #64748b;
+      font-size: 0.85em;
+    }
+
+    .spinner {
+      width: 28px;
+      height: 28px;
+      border: 3px solid #cbd5e1;
+      border-top-color: #007bff;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-bottom: 8px;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="app-container">
+    <h2>Aset Keuangan</h2>
+
+    <!-- PENGGUNA AKTIF toggles -->
+    <div class="user-selector">
+      <button class="user-btn" id="btn-aldo" onclick="pilihUser('Aldo')">Aldo</button>
+      <button class="user-btn" id="btn-iren" onclick="pilihUser('Iren')">Iren</button>
+    </div>
+
+    <div class="form-group">
+      <label>Nama Aset / Dompet</label>
+      <input type="text" id="nama-aset" placeholder="Contoh: BCA, Gopay, Cash...">
+    </div>
+
+    <div class="form-group">
+      <label>Saldo Iren (Rp)</label>
+      <input type="number" id="saldo-iren" placeholder="Masukkan saldo Iren...">
+    </div>
+
+    <div class="form-group">
+      <label>Saldo Aldo (Rp)</label>
+      <input type="number" id="saldo-aldo" placeholder="Masukkan saldo Aldo...">
+    </div>
+
+    <div class="btn-container">
+      <button class="primary" onclick="simpanAset()">Tambah / Update Aset</button>
+    </div>
+
+    <h3>Daftar Aset</h3>
+    <div id="loading-aset" class="loading-spinner">
+      <div class="spinner"></div>
+      <span>Memuat data aset...</span>
+    </div>
+    <div class="table-wrapper" id="tabel-aset-wrapper" style="display: none;">
+      <table id="tabel-aset">
+        <thead>
+          <tr>
+            <th>Nama Aset</th>
+            <th>Iren</th>
+            <th>Aldo</th>
+            <th>Aksi</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Diisi secara dinamis -->
+        </tbody>
+        <tfoot>
+          <tr class="highlight-total">
+            <td>Total</td>
+            <td id="total-iren">Rp 0</td>
+            <td id="total-aldo">Rp 0</td>
+            <td></td>
+          </tr>
+          <tr class="highlight-total">
+            <td>Keseluruhan</td>
+            <td colspan="2" id="total-keseluruhan" style="text-align: center;">Rp 0</td>
+            <td></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <!-- Sticky Bottom Navigation Bar -->
+    <div class="bottom-nav">
+      <a href="javascript:void(0)" onclick="kembaliKeTransaksi()" class="nav-tab">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="5" width="20" height="14" rx="2" ry="2" />
+          <line x1="2" y1="10" x2="22" y2="10" />
+        </svg>
+        <span>Transaksi</span>
+      </a>
+      <a href="javascript:void(0)" onclick="keHalamanAnggaran()" class="nav-tab">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+        </svg>
+        <span>Anggaran</span>
+      </a>
+      <a href="javascript:void(0)" onclick="keHalamanKategori()" class="nav-tab">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="7" height="7" />
+          <rect x="14" y="3" width="7" height="7" />
+          <rect x="14" y="14" width="7" height="7" />
+          <rect x="3" y="14" width="7" height="7" />
+        </svg>
+        <span>Kategori</span>
+      </a>
+      <a href="javascript:void(0)" class="nav-tab active">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20 12V8H6a2 2 0 0 1-2-2c0-1.1.9-2 2-2h12v2" />
+          <path d="M4 6v12a2 2 0 0 0 2 2h14v-4" />
+          <path d="M18 12a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h4v-6Z" />
+        </svg>
+        <span>Aset</span>
+      </a>
+    </div>
+  </div>
+
+  <script>
+    let currentUser = "<?= currentUser ?>";
+
+    function inisialisasiUser() {
+      pilihUser(currentUser);
+    }
+
+    function pilihUser(nama) {
+      currentUser = nama;
+      document.querySelectorAll('.user-btn').forEach(function (btn) {
+        btn.classList.remove('active');
+      });
+      var activeBtn = document.getElementById('btn-' + nama.toLowerCase());
+      if (activeBtn) activeBtn.classList.add('active');
+    }
+
+    function kembaliKeTransaksi() {
+      window.top.location.href = "<?= scriptUrl ?>?user=" + currentUser;
+    }
+
+    function keHalamanAnggaran() {
+      window.top.location.href = "<?= scriptUrl ?>?page=anggaran&user=" + currentUser;
+    }
+
+    function keHalamanKategori() {
+      window.top.location.href = "<?= scriptUrl ?>?page=kategori&user=" + currentUser;
+    }
+
+    function simpanAset() {
+      var nama = document.getElementById("nama-aset").value.trim();
+      var iren = document.getElementById("saldo-iren").value;
+      var aldo = document.getElementById("saldo-aldo").value;
+
+      if (!nama) {
+        tunjukkanAlert("Silakan masukkan nama aset.");
+        return;
+      }
+      if (iren === "" || aldo === "") {
+        tunjukkanAlert("Masukkan nominal saldo (bisa 0 jika tidak ada).");
+        return;
+      }
+
+      google.script.run
+        .withSuccessHandler(function (response) {
+          tunjukkanAlert(response.message, function() {
+            document.getElementById("nama-aset").value = "";
+            document.getElementById("saldo-iren").value = "";
+            document.getElementById("saldo-aldo").value = "";
+            loadAset();
+          });
+        })
+        .tambahAset(nama, iren, aldo);
+    }
+
+    function loadAset() {
+      document.getElementById("loading-aset").style.display = "flex";
+      document.getElementById("tabel-aset-wrapper").style.display = "none";
+      google.script.run
+        .withSuccessHandler(function (asetArray) {
+          document.getElementById("loading-aset").style.display = "none";
+          document.getElementById("tabel-aset-wrapper").style.display = "block";
+          var tbody = document.querySelector("#tabel-aset tbody");
+          tbody.innerHTML = "";
+
+          let totalIren = 0;
+          let totalAldo = 0;
+
+          asetArray.forEach(function (item) {
+            if (!item || !item.nama) return;
+            totalIren += item.iren;
+            totalAldo += item.aldo;
+
+            var row = document.createElement("tr");
+            row.innerHTML = `
+                <td style="font-weight: 600; color: #0f172a;">${item.nama}</td>
+                <td>Rp ${item.iren.toLocaleString('id-ID')}</td>
+                <td>Rp ${item.aldo.toLocaleString('id-ID')}</td>
+                <td>
+                  <button onclick="mulaiEditAset(this)" data-nama="${item.nama}" data-iren="${item.iren}" data-aldo="${item.aldo}" class="action-btn edit">Edit</button>
+                  <button onclick="hapusAsetDariSheets('${item.nama.replace(/'/g, "\\'")}')" class="action-btn delete">Hapus</button>
+                </td>
+              `;
+            tbody.appendChild(row);
+          });
+
+          document.getElementById("total-iren").textContent = "Rp " + totalIren.toLocaleString('id-ID');
+          document.getElementById("total-aldo").textContent = "Rp " + totalAldo.toLocaleString('id-ID');
+          document.getElementById("total-keseluruhan").textContent = "Rp " + (totalIren + totalAldo).toLocaleString('id-ID');
+        })
+        .ambilSemuaAset();
+    }
+
+    function mulaiEditAset(btn) {
+      document.getElementById("nama-aset").value = btn.dataset.nama;
+      document.getElementById("saldo-iren").value = btn.dataset.iren;
+      document.getElementById("saldo-aldo").value = btn.dataset.aldo;
+      document.getElementById("nama-aset").focus();
+    }
+
+    function hapusAsetDariSheets(nama) {
+      tunjukkanConfirm(`Apakah Anda yakin ingin menghapus aset "${nama}"?`, function() {
+        google.script.run
+          .withSuccessHandler(function (response) {
+            loadAset();
+          })
+          .hapusAset(nama);
+      });
+    }
+
+    window.onload = function () {
+      inisialisasiUser();
+      loadAset();
+    };
+
+    // ==========================================
+    // CUSTOM MODAL SYSTEM (ALERT, CONFIRM, PROMPT)
+    // ==========================================
+    function tunjukkanAlert(pesan, callback) {
+      buatModalHtml("alert", pesan, null, function() {
+        if (callback) callback();
+      });
+    }
+
+    function tunjukkanConfirm(pesan, callbackSetuju, callbackBatal) {
+      buatModalHtml("confirm", pesan, null, function(hasil) {
+        if (hasil === true && callbackSetuju) {
+          callbackSetuju();
+        } else if (hasil === false && callbackBatal) {
+          callbackBatal();
+        }
+      });
+    }
+
+    function tunjukkanPrompt(pesan, nilaiDefault, callbackSimpan) {
+      buatModalHtml("prompt", pesan, nilaiDefault, function(hasil) {
+        if (callbackSimpan) callbackSimpan(hasil);
+      });
+    }
+
+    function buatModalHtml(tipe, pesan, nilaiDefault, callback) {
+      var modalLama = document.getElementById("custom-modal-overlay");
+      if (modalLama) modalLama.remove();
+
+      var styleEl = document.getElementById("custom-modal-styles");
+      if (!styleEl) {
+        styleEl = document.createElement("style");
+        styleEl.id = "custom-modal-styles";
+        styleEl.innerHTML = `
+          #custom-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(15, 23, 42, 0.45);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 99999;
+            animation: modalFadeIn 0.2s ease-out;
+          }
+          .custom-modal-card {
+            background: #ffffff;
+            width: 90%;
+            max-width: 320px;
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            border: 1px solid #e2e8f0;
+            animation: modalScaleUp 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+          }
+          .custom-modal-text {
+            font-size: 0.95em;
+            font-weight: 500;
+            color: #0f172a;
+            margin-bottom: 16px;
+            line-height: 1.5;
+          }
+          .custom-modal-input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 0.9em;
+            margin-bottom: 16px;
+            outline: none;
+            text-align: center;
+            font-weight: 600;
+            background: #f8fafc;
+            transition: all 0.2s;
+          }
+          .custom-modal-input:focus {
+            border-color: #007bff;
+            background: #ffffff;
+            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.15);
+          }
+          .custom-modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+          }
+          .custom-modal-btn {
+            flex: 1;
+            padding: 10px;
+            font-size: 0.85em;
+            font-weight: 600;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.2s;
+          }
+          .custom-modal-btn.primary {
+            background: #007bff;
+            color: #ffffff;
+          }
+          .custom-modal-btn.primary:hover {
+            background: #0056b3;
+          }
+          .custom-modal-btn.secondary {
+            background: #f1f5f9;
+            color: #475569;
+            border: 1px solid #e2e8f0;
+          }
+          .custom-modal-btn.secondary:hover {
+            background: #e2e8f0;
+          }
+          @keyframes modalFadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+          }
+          @keyframes modalScaleUp {
+            from { transform: scale(0.95); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+          }
+        `;
+        document.head.appendChild(styleEl);
+      }
+
+      var overlay = document.createElement("div");
+      overlay.id = "custom-modal-overlay";
+
+      var card = document.createElement("div");
+      card.className = "custom-modal-card";
+
+      var textDiv = document.createElement("div");
+      textDiv.className = "custom-modal-text";
+      textDiv.innerText = pesan;
+      card.appendChild(textDiv);
+
+      var inputEl = null;
+      if (tipe === "prompt") {
+        inputEl = document.createElement("input");
+        inputEl.type = "text";
+        inputEl.className = "custom-modal-input";
+        inputEl.value = nilaiDefault !== null ? nilaiDefault : "";
+        card.appendChild(inputEl);
+      }
+
+      var actionsDiv = document.createElement("div");
+      actionsDiv.className = "custom-modal-actions";
+
+      if (tipe === "alert") {
+        var btnOk = document.createElement("button");
+        btnOk.className = "custom-modal-btn primary";
+        btnOk.innerText = "OK";
+        btnOk.onclick = function() {
+          overlay.remove();
+          callback(true);
+        };
+        actionsDiv.appendChild(btnOk);
+      } else if (tipe === "confirm") {
+        var btnCancel = document.createElement("button");
+        btnCancel.className = "custom-modal-btn secondary";
+        btnCancel.innerText = "Batal";
+        btnCancel.onclick = function() {
+          overlay.remove();
+          callback(false);
+        };
+        
+        var btnOk = document.createElement("button");
+        btnOk.className = "custom-modal-btn primary";
+        btnOk.innerText = "OK";
+        btnOk.onclick = function() {
+          overlay.remove();
+          callback(true);
+        };
+        
+        actionsDiv.appendChild(btnCancel);
+        actionsDiv.appendChild(btnOk);
+      } else if (tipe === "prompt") {
+        var btnCancel = document.createElement("button");
+        btnCancel.className = "custom-modal-btn secondary";
+        btnCancel.innerText = "Batal";
+        btnCancel.onclick = function() {
+          overlay.remove();
+          callback(null);
+        };
+        
+        var btnOk = document.createElement("button");
+        btnOk.className = "custom-modal-btn primary";
+        btnOk.innerText = "Simpan";
+        btnOk.onclick = function() {
+          var val = inputEl.value;
+          overlay.remove();
+          callback(val);
+        };
+        
+        actionsDiv.appendChild(btnCancel);
+        actionsDiv.appendChild(btnOk);
+      }
+
+      card.appendChild(actionsDiv);
+      overlay.appendChild(card);
+      document.body.appendChild(overlay);
+
+      if (inputEl) {
+        inputEl.focus();
+        inputEl.select();
+        inputEl.onkeydown = function(e) {
+          if (e.key === "Enter") {
+            btnOk.click();
+          }
+        };
+      }
+    }
+  </script>
+</body>
+
+</html>

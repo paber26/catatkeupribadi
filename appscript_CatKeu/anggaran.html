@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <style>
+      /* Reset & Base Styles */
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        background-color: #f1f5f9;
+        display: flex;
+        justify-content: center;
+        min-height: 100vh;
+      }
+      
+      /* App container shell resembling mobile screen */
+      .app-container {
+        width: 100%;
+        max-width: 480px;
+        background-color: #ffffff;
+        min-height: 100vh;
+        position: relative;
+        padding: 24px 20px 85px 20px; /* Space at bottom for navigation bar */
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.05);
+        display: flex;
+        flex-direction: column;
+      }
+      
+      h2 { color: #0f172a; margin-bottom: 20px; text-align: center; font-size: 1.4em; font-weight: 700; }
+      h3 { color: #1e293b; margin: 25px 0 12px 0; font-size: 1.1em; font-weight: 700; }
+      
+      /* Segmented Toggle Control for User Switcher */
+      .user-selector {
+        display: flex;
+        justify-content: center;
+        gap: 6px;
+        margin-bottom: 20px;
+        background: #f1f5f9;
+        padding: 4px;
+        border-radius: 12px;
+      }
+      .user-btn {
+        flex: 1;
+        padding: 10px;
+        border: none;
+        border-radius: 8px;
+        font-size: 0.85em;
+        font-weight: 600;
+        cursor: pointer;
+        background: transparent;
+        color: #64748b;
+        transition: all 0.2s ease;
+      }
+      .user-btn.active {
+        background: #ffffff;
+        color: #0f172a;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+      }
+
+      /* Date metrics display card */
+      .metrics-card {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 14px;
+        margin-bottom: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .metrics-title {
+        font-size: 0.9em;
+        font-weight: 700;
+        color: #0f172a;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 4px;
+      }
+      .metrics-row {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.85em;
+        color: #475569;
+      }
+      .metrics-value {
+        font-weight: 600;
+        color: #0f172a;
+      }
+
+      /* Budget Table Section styled for mobile responsive viewport */
+      .table-wrapper {
+        width: 100%;
+        overflow-x: auto;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+      }
+      table { width: 100%; border-collapse: collapse; font-size: 0.82em; }
+      th, td { padding: 10px 8px; text-align: left; border-bottom: 1px solid #e2e8f0; }
+      th { background-color: #f8fafc; font-weight: 600; color: #475569; border-bottom: 2px solid #e2e8f0; }
+      tr:nth-child(even) { background-color: #f8fafc; }
+      
+      .action-btn {
+        padding: 3px 6px;
+        border: none;
+        border-radius: 4px;
+        font-size: 0.8em;
+        font-weight: 600;
+        cursor: pointer;
+        background: #e0f2fe;
+        color: #0369a1;
+        transition: opacity 0.2s;
+        display: inline-block;
+      }
+      .action-btn:hover { opacity: 0.85; }
+      
+      .highlight-total { background-color: #dcfce7 !important; font-weight: 700; color: #14532d; }
+      .text-danger { color: #b91c1c; font-weight: 600; }
+
+      /* Sticky Bottom Navigation menu */
+      .bottom-nav {
+        position: fixed;
+        bottom: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 100%;
+        max-width: 480px;
+        height: 65px;
+        background: #ffffff;
+        border-top: 1px solid #e2e8f0;
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+        box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.05);
+        z-index: 1000;
+      }
+      .nav-tab {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background: none;
+        border: none;
+        color: #64748b;
+        cursor: pointer;
+        font-size: 0.65em;
+        font-weight: 600;
+        text-decoration: none;
+        flex: 1;
+        height: 100%;
+        transition: all 0.2s ease;
+      }
+      .nav-tab svg { margin-bottom: 3px; color: #64748b; transition: color 0.2s ease; }
+      .nav-tab.active { color: #007bff; }
+      .nav-tab.active svg { color: #007bff; }
+
+      /* CSS Loading Spinner */
+      .loading-spinner {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 30px;
+        color: #64748b;
+        font-size: 0.85em;
+      }
+      .spinner {
+        width: 28px;
+        height: 28px;
+        border: 3px solid #cbd5e1;
+        border-top-color: #007bff;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+        margin-bottom: 8px;
+      }
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+    </style>
+  </head>
+  <body>
+
+    <div class="app-container">
+      <h2>Batasan Anggaran</h2>
+
+      <!-- PENGGUNA AKTIF toggles -->
+      <div class="user-selector">
+        <button class="user-btn" id="btn-aldo" onclick="pilihUser('Aldo')">Aldo</button>
+        <button class="user-btn" id="btn-iren" onclick="pilihUser('Iren')">Iren</button>
+      </div>
+
+      <!-- Bulan & Hari Info Card -->
+      <div class="metrics-card">
+        <div class="metrics-title" id="info-bulan">Bulan: ...</div>
+        <div class="metrics-row">
+          <span>Hari Bulan Ini:</span>
+          <span class="metrics-value" id="info-total-hari">-</span>
+        </div>
+        <div class="metrics-row">
+          <span>Sisa Hari (Termasuk Hari Ini):</span>
+          <span class="metrics-value" id="info-sisa-hari">-</span>
+        </div>
+      </div>
+
+      <h3>Daftar Anggaran</h3>
+      
+      <div id="loading-anggaran" class="loading-spinner">
+        <div class="spinner"></div>
+        <span>Memuat data anggaran...</span>
+      </div>
+      
+      <div class="table-wrapper" id="tabel-anggaran-wrapper" style="display: none;">
+        <table id="tabel-anggaran">
+          <thead>
+            <tr>
+              <th>Kategori</th>
+              <th>Anggaran</th>
+              <th>Realisasi</th>
+              <th>Sisa</th>
+              <th>Sisa/Hari</th>
+              <th>Aksi</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Diisi secara dinamis -->
+          </tbody>
+          <tfoot>
+            <tr class="highlight-total">
+              <td>Total</td>
+              <td id="total-anggaran">Rp 0</td>
+              <td id="total-realisasi">Rp 0</td>
+              <td id="total-sisa">Rp 0</td>
+              <td id="total-sisa-hari">Rp 0</td>
+              <td></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      <!-- Sticky Bottom Navigation Bar -->
+      <div class="bottom-nav">
+        <a href="javascript:void(0)" onclick="kembaliKeTransaksi()" class="nav-tab">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2" ry="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+          <span>Transaksi</span>
+        </a>
+        <a href="javascript:void(0)" class="nav-tab active">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          <span>Anggaran</span>
+        </a>
+        <a href="javascript:void(0)" onclick="keHalamanKategori()" class="nav-tab">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          <span>Kategori</span>
+        </a>
+        <a href="javascript:void(0)" onclick="keHalamanAset()" class="nav-tab">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12V8H6a2 2 0 0 1-2-2c0-1.1.9-2 2-2h12v2"/><path d="M4 6v12a2 2 0 0 0 2 2h14v-4"/><path d="M18 12a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h4v-6Z"/></svg>
+          <span>Aset</span>
+        </a>
+      </div>
+    </div>
+
+    <script>
+      let currentUser = "<?= currentUser ?>";
+      let localBudgetData = [];
+
+      function inisialisasiUser() {
+        pilihUser(currentUser);
+      }
+
+      function pilihUser(nama) {
+        currentUser = nama;
+        document.querySelectorAll('.user-btn').forEach(function(btn) {
+          btn.classList.remove('active');
+        });
+        var activeBtn = document.getElementById('btn-' + nama.toLowerCase());
+        if (activeBtn) activeBtn.classList.add('active');
+        
+        renderTabelAnggaran();
+      }
+
+      function kembaliKeTransaksi() {
+        window.top.location.href = "<?= scriptUrl ?>?user=" + currentUser;
+      }
+
+      function keHalamanKategori() {
+        window.top.location.href = "<?= scriptUrl ?>?page=kategori&user=" + currentUser;
+      }
+
+      function keHalamanAset() {
+        window.top.location.href = "<?= scriptUrl ?>?page=aset&user=" + currentUser;
+      }
+
+      // Hitung parameter bulan & hari secara dinamis
+      function getMonthDetails() {
+        var now = new Date();
+        var year = now.getFullYear();
+        var month = now.getMonth(); 
+        
+        var monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+        var monthNameStr = monthNames[month] + " " + year;
+        
+        var totalDays = new Date(year, month + 1, 0).getDate();
+        var currentDay = now.getDate();
+        var remainingDays = totalDays - currentDay + 1; // Termasuk hari ini
+        if (remainingDays < 1) remainingDays = 1; // Proteksi pembagian nol
+        
+        return {
+          monthName: monthNameStr,
+          totalDays: totalDays,
+          remainingDays: remainingDays
+        };
+      }
+
+      function renderDateHeader() {
+        var details = getMonthDetails();
+        document.getElementById("info-bulan").textContent = "Bulan: " + details.monthName;
+        document.getElementById("info-total-hari").textContent = details.totalDays + " hari";
+        document.getElementById("info-sisa-hari").textContent = details.remainingDays + " hari";
+      }
+
+      function loadAnggaran() {
+        document.getElementById("loading-anggaran").style.display = "flex";
+        document.getElementById("tabel-anggaran-wrapper").style.display = "none";
+        
+        google.script.run
+          .withSuccessHandler(function(budgetArray) {
+            localBudgetData = budgetArray;
+            document.getElementById("loading-anggaran").style.display = "none";
+            document.getElementById("tabel-anggaran-wrapper").style.display = "block";
+            
+            renderTabelAnggaran();
+          })
+          .ambilSemuaAnggaran();
+      }
+
+      function renderTabelAnggaran() {
+        var tbody = document.querySelector("#tabel-anggaran tbody");
+        tbody.innerHTML = "";
+        
+        // Filter anggaran sesuai user aktif
+        var userBudgets = localBudgetData.filter(function(item) {
+          return item.user === currentUser;
+        });
+
+        if (userBudgets.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: #64748b; padding: 20px;">Belum ada anggaran terdefinisi. Silakan tambahkan kategori terlebih dahulu.</td></tr>`;
+          return;
+        }
+
+        var details = getMonthDetails();
+        var sisaHari = details.remainingDays;
+
+        let totalAnggaran = 0;
+        let totalRealisasi = 0;
+        let totalSisa = 0;
+
+        userBudgets.forEach(function(item) {
+          var sisa = item.anggaran - item.realisasi;
+          var sisaPerHari = sisa > 0 ? Math.round(sisa / sisaHari) : 0;
+          
+          totalAnggaran += item.anggaran;
+          totalRealisasi += item.realisasi;
+          totalSisa += sisa;
+
+          var sisaClass = sisa < 0 ? "text-danger" : "";
+
+          var row = document.createElement("tr");
+          row.innerHTML = `
+            <td style="font-weight: 600; color: #0f172a;">${item.kategori}</td>
+            <td>Rp ${item.anggaran.toLocaleString('id-ID')}</td>
+            <td>Rp ${item.realisasi.toLocaleString('id-ID')}</td>
+            <td class="${sisaClass}">Rp ${sisa.toLocaleString('id-ID')}</td>
+            <td>Rp ${sisaPerHari.toLocaleString('id-ID')}</td>
+            <td>
+              <button onclick="editNominalAnggaran('${item.kategori.replace(/'/g, "\\'")}', ${item.anggaran})" class="action-btn">Edit</button>
+            </td>
+          `;
+          tbody.appendChild(row);
+        });
+
+        // Update footer totals
+        var totalSisaPerHari = totalSisa > 0 ? Math.round(totalSisa / sisaHari) : 0;
+        document.getElementById("total-anggaran").textContent = "Rp " + totalAnggaran.toLocaleString('id-ID');
+        document.getElementById("total-realisasi").textContent = "Rp " + totalRealisasi.toLocaleString('id-ID');
+        document.getElementById("total-sisa").textContent = "Rp " + totalSisa.toLocaleString('id-ID');
+        document.getElementById("total-sisa-hari").textContent = "Rp " + totalSisaPerHari.toLocaleString('id-ID');
+        
+        if (totalSisa < 0) {
+          document.getElementById("total-sisa").className = "text-danger";
+        } else {
+          document.getElementById("total-sisa").className = "";
+        }
+      }
+
+      function editNominalAnggaran(kategori, nominalLama) {
+        tunjukkanPrompt("Masukkan nominal anggaran bulanan baru untuk kategori '" + kategori + "':", nominalLama, function(inputVal) {
+          if (inputVal === null) return; // Batal edit
+          
+          var nominalBaru = Number(inputVal);
+          if (isNaN(nominalBaru) || nominalBaru < 0) {
+            tunjukkanAlert("Masukkan nominal angka yang valid dan bernilai positif.");
+            return;
+          }
+
+          document.getElementById("loading-anggaran").style.display = "flex";
+          document.getElementById("tabel-anggaran-wrapper").style.display = "none";
+
+          google.script.run
+            .withSuccessHandler(function(response) {
+              tunjukkanAlert(response.message, function() {
+                loadAnggaran();
+              });
+            })
+            .ubahAnggaran(currentUser, kategori, nominalBaru);
+        });
+      }
+
+      window.onload = function() {
+        renderDateHeader();
+        inisialisasiUser();
+        loadAnggaran();
+      };
+
+      // ==========================================
+      // CUSTOM MODAL SYSTEM (ALERT, CONFIRM, PROMPT)
+      // ==========================================
+      function tunjukkanAlert(pesan, callback) {
+        buatModalHtml("alert", pesan, null, function() {
+          if (callback) callback();
+        });
+      }
+
+      function tunjukkanConfirm(pesan, callbackSetuju, callbackBatal) {
+        buatModalHtml("confirm", pesan, null, function(hasil) {
+          if (hasil === true && callbackSetuju) {
+            callbackSetuju();
+          } else if (hasil === false && callbackBatal) {
+            callbackBatal();
+          }
+        });
+      }
+
+      function tunjukkanPrompt(pesan, nilaiDefault, callbackSimpan) {
+        buatModalHtml("prompt", pesan, nilaiDefault, function(hasil) {
+          if (callbackSimpan) callbackSimpan(hasil);
+        });
+      }
+
+      function buatModalHtml(tipe, pesan, nilaiDefault, callback) {
+        var modalLama = document.getElementById("custom-modal-overlay");
+        if (modalLama) modalLama.remove();
+
+        var styleEl = document.getElementById("custom-modal-styles");
+        if (!styleEl) {
+          styleEl = document.createElement("style");
+          styleEl.id = "custom-modal-styles";
+          styleEl.innerHTML = `
+            #custom-modal-overlay {
+              position: fixed;
+              top: 0;
+              left: 0;
+              width: 100vw;
+              height: 100vh;
+              background: rgba(15, 23, 42, 0.45);
+              backdrop-filter: blur(4px);
+              -webkit-backdrop-filter: blur(4px);
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              z-index: 99999;
+              animation: modalFadeIn 0.2s ease-out;
+            }
+            .custom-modal-card {
+              background: #ffffff;
+              width: 90%;
+              max-width: 320px;
+              border-radius: 16px;
+              padding: 20px;
+              box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+              text-align: center;
+              border: 1px solid #e2e8f0;
+              animation: modalScaleUp 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+            }
+            .custom-modal-text {
+              font-size: 0.95em;
+              font-weight: 500;
+              color: #0f172a;
+              margin-bottom: 16px;
+              line-height: 1.5;
+            }
+            .custom-modal-input {
+              width: 100%;
+              padding: 10px 12px;
+              border: 1px solid #cbd5e1;
+              border-radius: 8px;
+              font-size: 0.9em;
+              margin-bottom: 16px;
+              outline: none;
+              text-align: center;
+              font-weight: 600;
+              background: #f8fafc;
+              transition: all 0.2s;
+            }
+            .custom-modal-input:focus {
+              border-color: #007bff;
+              background: #ffffff;
+              box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.15);
+            }
+            .custom-modal-actions {
+              display: flex;
+              gap: 10px;
+              justify-content: center;
+            }
+            .custom-modal-btn {
+              flex: 1;
+              padding: 10px;
+              font-size: 0.85em;
+              font-weight: 600;
+              border-radius: 8px;
+              border: none;
+              cursor: pointer;
+              transition: background-color 0.2s;
+            }
+            .custom-modal-btn.primary {
+              background: #007bff;
+              color: #ffffff;
+            }
+            .custom-modal-btn.primary:hover {
+              background: #0056b3;
+            }
+            .custom-modal-btn.secondary {
+              background: #f1f5f9;
+              color: #475569;
+            }
+            .custom-modal-btn.secondary:hover {
+              background: #e2e8f0;
+            }
+            @keyframes modalFadeIn {
+              from { opacity: 0; }
+              to { opacity: 1; }
+            }
+            @keyframes modalScaleUp {
+              from { transform: scale(0.95); opacity: 0; }
+              to { transform: scale(1); opacity: 1; }
+            }
+          `;
+          document.head.appendChild(styleEl);
+        }
+
+        var overlay = document.createElement("div");
+        overlay.id = "custom-modal-overlay";
+
+        var card = document.createElement("div");
+        card.className = "custom-modal-card";
+
+        var textDiv = document.createElement("div");
+        textDiv.className = "custom-modal-text";
+        textDiv.innerText = pesan;
+        card.appendChild(textDiv);
+
+        var inputEl = null;
+        if (tipe === "prompt") {
+          inputEl = document.createElement("input");
+          inputEl.type = "text";
+          inputEl.className = "custom-modal-input";
+          inputEl.value = nilaiDefault !== null ? nilaiDefault : "";
+          card.appendChild(inputEl);
+        }
+
+        var actionsDiv = document.createElement("div");
+        actionsDiv.className = "custom-modal-actions";
+
+        if (tipe === "alert") {
+          var btnOk = document.createElement("button");
+          btnOk.className = "custom-modal-btn primary";
+          btnOk.innerText = "OK";
+          btnOk.onclick = function() {
+            overlay.remove();
+            callback(true);
+          };
+          actionsDiv.appendChild(btnOk);
+        } else if (tipe === "confirm") {
+          var btnCancel = document.createElement("button");
+          btnCancel.className = "custom-modal-btn secondary";
+          btnCancel.innerText = "Batal";
+          btnCancel.onclick = function() {
+            overlay.remove();
+            callback(false);
+          };
+          
+          var btnOk = document.createElement("button");
+          btnOk.className = "custom-modal-btn primary";
+          btnOk.innerText = "OK";
+          btnOk.onclick = function() {
+            overlay.remove();
+            callback(true);
+          };
+          
+          actionsDiv.appendChild(btnCancel);
+          actionsDiv.appendChild(btnOk);
+        } else if (tipe === "prompt") {
+          var btnCancel = document.createElement("button");
+          btnCancel.className = "custom-modal-btn secondary";
+          btnCancel.innerText = "Batal";
+          btnCancel.onclick = function() {
+            overlay.remove();
+            callback(null);
+          };
+          
+          var btnOk = document.createElement("button");
+          btnOk.className = "custom-modal-btn primary";
+          btnOk.innerText = "Simpan";
+          btnOk.onclick = function() {
+            var val = inputEl.value;
+            overlay.remove();
+            callback(val);
+          };
+          
+          actionsDiv.appendChild(btnCancel);
+          actionsDiv.appendChild(btnOk);
+        }
+
+        card.appendChild(actionsDiv);
+        overlay.appendChild(card);
+        document.body.appendChild(overlay);
+
+        if (inputEl) {
+          inputEl.focus();
+          inputEl.select();
+          inputEl.onkeydown = function(e) {
+            if (e.key === "Enter") {
+              btnOk.click();
+            }
+          };
+        }
+      }
+    </script>
+  </body>
+</html>

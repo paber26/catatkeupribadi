@@ -1,0 +1,6 @@
+{
+  "name": "Catatan Keuangan",
+  "description": "Aplikasi pengelolaan keuangan keluarga yang andal, tenang, dan memberdayakan.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
