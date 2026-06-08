@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <base target="_top">
+  <style>
+    /* Reset & Base Styles */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: #f1f5f9;
+      display: flex;
+      justify-content: center;
+      min-height: 100vh;
+    }
+
+    .app-container {
+      width: 100%;
+      max-width: 480px;
+      background-color: #ffffff;
+      min-height: 100vh;
+      position: relative;
+      padding: 24px 20px 85px 20px;
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.05);
+      display: flex;
+      flex-direction: column;
+    }
+
+    h2 { color: #0f172a; margin-bottom: 20px; text-align: center; font-size: 1.4em; font-weight: 700; }
+    h3 { color: #1e293b; margin: 25px 0 15px 0; font-size: 1.1em; font-weight: 700; }
+
+    /* Segmented Toggle for User */
+    .user-selector {
+      display: flex;
+      justify-content: center;
+      gap: 6px;
+      margin-bottom: 20px;
+      background: #f1f5f9;
+      padding: 4px;
+      border-radius: 12px;
+    }
+    .user-btn {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.85em;
+      font-weight: 600;
+      cursor: pointer;
+      background: transparent;
+      color: #64748b;
+      transition: all 0.2s ease;
+    }
+    .user-btn.active {
+      background: #ffffff;
+      color: #0f172a;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+
+    /* ========= Year Picker Styles ========= */
+    .year-picker-card {
+      background: linear-gradient(135deg, #059669 0%, #047857 100%);
+      border-radius: 16px;
+      padding: 18px 14px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 4px 16px rgba(5, 150, 105, 0.25);
+      user-select: none;
+    }
+    .year-picker-card .arrow-btn {
+      width: 38px;
+      height: 38px;
+      border: none;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.18);
+      color: #ffffff;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+      flex-shrink: 0;
+    }
+    .year-picker-card .arrow-btn:hover {
+      background: rgba(255, 255, 255, 0.3);
+      transform: scale(1.08);
+    }
+    .year-picker-card .arrow-btn:active {
+      transform: scale(0.95);
+    }
+    .year-picker-center {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+    }
+    .year-picker-label {
+      font-size: 0.7em;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.7);
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+    }
+    .year-picker-year {
+      font-size: 1.6em;
+      font-weight: 800;
+      color: #ffffff;
+      letter-spacing: 1px;
+      line-height: 1.2;
+    }
+    .year-picker-today-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      margin-top: 4px;
+      padding: 4px 10px;
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.12);
+      color: rgba(255, 255, 255, 0.9);
+      font-size: 0.6em;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      letter-spacing: 0.3px;
+    }
+    .year-picker-today-btn:hover {
+      background: rgba(255, 255, 255, 0.25);
+      border-color: rgba(255, 255, 255, 0.5);
+    }
+
+    /* Summary Cards */
+    .summary-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .summary-card {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 12px 10px;
+      text-align: center;
+    }
+    .summary-card .label {
+      font-size: 0.65em;
+      font-weight: 600;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
+    }
+    .summary-card .value {
+      font-size: 0.82em;
+      font-weight: 700;
+      color: #0f172a;
+    }
+    .summary-card .value.positive { color: #059669; }
+    .summary-card .value.negative { color: #ef4444; }
+
+    /* Form */
+    .form-group { margin-bottom: 14px; }
+    label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 0.78em; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; }
+    input, textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      box-sizing: border-box;
+      font-size: 0.9em;
+      background-color: #f8fafc;
+      outline: none;
+      transition: all 0.2s ease;
+      font-family: inherit;
+    }
+    input:focus, textarea:focus {
+      border-color: #059669;
+      background-color: #ffffff;
+      box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.15);
+    }
+    textarea { resize: vertical; min-height: 44px; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+    .btn-container { display: flex; gap: 10px; margin-top: 16px; margin-bottom: 10px; }
+    button.primary {
+      flex: 1;
+      padding: 12px;
+      background: #059669;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.9em;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+    button.primary:hover { background: #047857; }
+
+    /* Item Cards */
+    .item-list { display: flex; flex-direction: column; gap: 10px; }
+    .item-card {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 14px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+      position: relative;
+    }
+    .item-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 8px;
+    }
+    .item-name {
+      font-size: 0.95em;
+      font-weight: 700;
+      color: #0f172a;
+      flex: 1;
+      margin-right: 8px;
+    }
+    .item-date-badge {
+      font-size: 0.7em;
+      font-weight: 600;
+      color: #64748b;
+      background: #f1f5f9;
+      padding: 3px 8px;
+      border-radius: 6px;
+      white-space: nowrap;
+    }
+    .item-amounts {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .item-amount-box {
+      text-align: center;
+    }
+    .item-amount-label {
+      font-size: 0.62em;
+      font-weight: 600;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 2px;
+    }
+    .item-amount-value {
+      font-size: 0.82em;
+      font-weight: 700;
+      color: #0f172a;
+    }
+    .item-amount-value.est { color: #6366f1; }
+    .item-amount-value.real { color: #059669; }
+    .item-amount-value.diff-pos { color: #059669; }
+    .item-amount-value.diff-neg { color: #ef4444; }
+
+    .item-note {
+      font-size: 0.78em;
+      color: #64748b;
+      font-style: italic;
+      margin-bottom: 8px;
+      padding: 6px 8px;
+      background: #f8fafc;
+      border-radius: 6px;
+      border-left: 3px solid #e2e8f0;
+    }
+    .item-actions {
+      display: flex;
+      gap: 6px;
+      justify-content: flex-end;
+    }
+    .action-btn {
+      padding: 5px 12px;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.75em;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    .action-btn:hover { opacity: 0.85; }
+    .action-btn.edit { background: #e0f2fe; color: #0369a1; }
+    .action-btn.delete { background: #fee2e2; color: #b91c1c; }
+
+    /* Empty State */
+    .empty-state {
+      text-align: center;
+      color: #64748b;
+      padding: 30px 20px;
+      font-size: 0.9em;
+    }
+    .empty-state svg { margin-bottom: 8px; color: #cbd5e1; }
+
+    /* Loading */
+    .loading-spinner {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 30px;
+      color: #64748b;
+      font-size: 0.85em;
+    }
+    .spinner {
+      width: 28px;
+      height: 28px;
+      border: 3px solid #cbd5e1;
+      border-top-color: #059669;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-bottom: 8px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Bottom Nav */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: 480px;
+      height: 65px;
+      background: #ffffff;
+      border-top: 1px solid #e2e8f0;
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.05);
+      z-index: 1000;
+    }
+    .nav-tab {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: none;
+      border: none;
+      color: #64748b;
+      cursor: pointer;
+      font-size: 0.7em;
+      font-weight: 600;
+      text-decoration: none;
+      flex: 1;
+      height: 100%;
+      transition: all 0.2s ease;
+    }
+    .nav-tab svg { margin-bottom: 3px; color: #64748b; transition: color 0.2s ease; }
+    .nav-tab.active { color: #059669; }
+    .nav-tab.active svg { color: #059669; }
+  </style>
+</head>
+
+<body>
+  <div class="app-container">
+    <h2>Catatan Tahunan</h2>
+
+    <!-- User Selector -->
+    <div class="user-selector">
+      <button class="user-btn" id="btn-aldo" onclick="pilihUser('Aldo')">Aldo</button>
+      <button class="user-btn" id="btn-iren" onclick="pilihUser('Iren')">Iren</button>
+    </div>
+
+    <!-- Year Picker -->
+    <div class="year-picker-card">
+      <button class="arrow-btn" onclick="pindahTahun(-1)" aria-label="Tahun sebelumnya">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <div class="year-picker-center">
+        <span class="year-picker-label">Tahun</span>
+        <span class="year-picker-year" id="picker-year">2026</span>
+        <button class="year-picker-today-btn" onclick="keTahunIni()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          Tahun Ini
+        </button>
+      </div>
+      <button class="arrow-btn" onclick="pindahTahun(1)" aria-label="Tahun berikutnya">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
+    </div>
+
+    <!-- Summary -->
+    <div class="summary-row">
+      <div class="summary-card">
+        <div class="label">Total Estimasi</div>
+        <div class="value" id="total-estimasi">Rp 0</div>
+      </div>
+      <div class="summary-card">
+        <div class="label">Total Realisasi</div>
+        <div class="value" id="total-realisasi">Rp 0</div>
+      </div>
+      <div class="summary-card">
+        <div class="label">Selisih</div>
+        <div class="value" id="total-selisih">Rp 0</div>
+      </div>
+    </div>
+
+    <!-- Form Add/Edit -->
+    <div id="form-section">
+      <h3 id="form-title">Tambah Item</h3>
+      <div class="form-group">
+        <label>Nama Item</label>
+        <input type="text" id="input-item" placeholder="Contoh: THR 2026, Pajak Motor...">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Estimasi (Rp)</label>
+          <input type="number" id="input-estimasi" placeholder="0">
+        </div>
+        <div class="form-group">
+          <label>Realisasi (Rp)</label>
+          <input type="number" id="input-realisasi" placeholder="0">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Tanggal / Keterangan</label>
+          <input type="text" id="input-tanggal" placeholder="Contoh: Maret, 03-11">
+        </div>
+        <div class="form-group">
+          <label>Catatan</label>
+          <input type="text" id="input-catatan" placeholder="Catatan tambahan...">
+        </div>
+      </div>
+      <div class="btn-container">
+        <button class="primary" id="btn-simpan" onclick="simpanItem()">Tambah Item</button>
+      </div>
+      <div id="btn-batal-container" style="display: none; margin-bottom: 10px;">
+        <button onclick="batalEdit()" style="width: 100%; padding: 10px; background: #64748b; color: white; border: none; border-radius: 8px; font-weight: 600; font-size: 0.85em; cursor: pointer;">Batal Edit</button>
+      </div>
+    </div>
+
+    <h3>Daftar Item Tahunan</h3>
+    <div id="loading" class="loading-spinner">
+      <div class="spinner"></div>
+      <span>Memuat data...</span>
+    </div>
+    <div class="item-list" id="item-list" style="display: none;">
+      <!-- Diisi dinamis -->
+    </div>
+
+    <!-- Bottom Navigation -->
+    <div class="bottom-nav">
+      <a href="javascript:void(0)" onclick="kembaliKeTransaksi()" class="nav-tab">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2" ry="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+        <span>Transaksi</span>
+      </a>
+      <a href="javascript:void(0)" onclick="keHalamanDashboard()" class="nav-tab">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>
+        <span>Dashboard</span>
+      </a>
+      <a href="javascript:void(0)" onclick="keHalamanAnggaran()" class="nav-tab">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        <span>Anggaran</span>
+      </a>
+      <a href="javascript:void(0)" class="nav-tab active">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        <span>Tahunan</span>
+      </a>
+      <a href="javascript:void(0)" onclick="keHalamanAset()" class="nav-tab">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12V8H6a2 2 0 0 1-2-2c0-1.1.9-2 2-2h12v2"/><path d="M4 6v12a2 2 0 0 0 2 2h14v-4"/><path d="M18 12a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h4v-6Z"/></svg>
+        <span>Aset</span>
+      </a>
+    </div>
+  </div>
+
+  <script>
+    let currentUser = "<?= currentUser ?>";
+    let selectedTahun = new Date().getFullYear();
+    let editingId = null;
+
+    function pilihUser(nama) {
+      currentUser = nama;
+      document.querySelectorAll('.user-btn').forEach(function(btn) { btn.classList.remove('active'); });
+      var activeBtn = document.getElementById('btn-' + nama.toLowerCase());
+      if (activeBtn) activeBtn.classList.add('active');
+    }
+
+    // ========== Year Picker ==========
+    function pindahTahun(delta) {
+      selectedTahun += delta;
+      renderYearPicker();
+      loadData();
+    }
+
+    function keTahunIni() {
+      selectedTahun = new Date().getFullYear();
+      renderYearPicker();
+      loadData();
+    }
+
+    function renderYearPicker() {
+      document.getElementById("picker-year").textContent = selectedTahun;
+    }
+
+    // ========== Navigation ==========
+    function kembaliKeTransaksi() {
+      window.top.location.href = "<?= scriptUrl ?>?user=" + currentUser;
+    }
+    function keHalamanDashboard() {
+      window.top.location.href = "<?= scriptUrl ?>?page=dashboard&user=" + currentUser;
+    }
+    function keHalamanAnggaran() {
+      window.top.location.href = "<?= scriptUrl ?>?page=anggaran&user=" + currentUser;
+    }
+    function keHalamanAset() {
+      window.top.location.href = "<?= scriptUrl ?>?page=aset&user=" + currentUser;
+    }
+
+    // ========== CRUD ==========
+    function simpanItem() {
+      var item = document.getElementById("input-item").value.trim();
+      var estimasi = document.getElementById("input-estimasi").value;
+      var realisasi = document.getElementById("input-realisasi").value;
+      var tanggal = document.getElementById("input-tanggal").value.trim();
+      var catatan = document.getElementById("input-catatan").value.trim();
+
+      if (!item) {
+        tunjukkanAlert("Silakan masukkan nama item.");
+        return;
+      }
+
+      var data = {
+        item: item,
+        estimasi: estimasi || 0,
+        realisasi: realisasi || 0,
+        tanggal: tanggal,
+        catatan: catatan
+      };
+
+      if (editingId) {
+        google.script.run
+          .withSuccessHandler(function(res) {
+            tunjukkanAlert(res.message, function() {
+              batalEdit();
+              loadData();
+            });
+          })
+          .ubahTahunan(editingId, data);
+      } else {
+        google.script.run
+          .withSuccessHandler(function(res) {
+            tunjukkanAlert(res.message, function() {
+              resetForm();
+              loadData();
+            });
+          })
+          .tambahTahunan(data, selectedTahun);
+      }
+    }
+
+    function loadData() {
+      document.getElementById("loading").style.display = "flex";
+      document.getElementById("item-list").style.display = "none";
+      google.script.run
+        .withSuccessHandler(function(items) {
+          document.getElementById("loading").style.display = "none";
+          document.getElementById("item-list").style.display = "flex";
+          renderItems(items);
+        })
+        .ambilSemuaTahunan(selectedTahun);
+    }
+
+    function renderItems(items) {
+      var listEl = document.getElementById("item-list");
+      listEl.innerHTML = "";
+
+      var totalEst = 0, totalReal = 0;
+
+      if (items.length === 0) {
+        listEl.innerHTML = '<div class="empty-state"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><div>Belum ada catatan untuk tahun ' + selectedTahun + '</div></div>';
+        updateSummary(0, 0);
+        return;
+      }
+
+      items.forEach(function(item) {
+        totalEst += item.estimasi;
+        totalReal += item.realisasi;
+        var selisih = item.realisasi - item.estimasi;
+        var selisihClass = selisih >= 0 ? "diff-pos" : "diff-neg";
+        var selisihSign = selisih >= 0 ? "+" : "";
+
+        var card = document.createElement("div");
+        card.className = "item-card";
+
+        var noteHtml = item.catatan ? '<div class="item-note">' + escHtml(item.catatan) + '</div>' : '';
+        var dateHtml = item.tanggal ? '<span class="item-date-badge">' + escHtml(item.tanggal) + '</span>' : '';
+
+        card.innerHTML =
+          '<div class="item-card-header">' +
+            '<div class="item-name">' + escHtml(item.item) + '</div>' +
+            dateHtml +
+          '</div>' +
+          '<div class="item-amounts">' +
+            '<div class="item-amount-box"><div class="item-amount-label">Estimasi</div><div class="item-amount-value est">' + formatRp(item.estimasi) + '</div></div>' +
+            '<div class="item-amount-box"><div class="item-amount-label">Realisasi</div><div class="item-amount-value real">' + formatRp(item.realisasi) + '</div></div>' +
+            '<div class="item-amount-box"><div class="item-amount-label">Selisih</div><div class="item-amount-value ' + selisihClass + '">' + selisihSign + formatRp(selisih) + '</div></div>' +
+          '</div>' +
+          noteHtml +
+          '<div class="item-actions">' +
+            '<button class="action-btn edit" onclick="mulaiEdit(\'' + item.id + '\', this)" data-item="' + escAttr(item.item) + '" data-est="' + item.estimasi + '" data-real="' + item.realisasi + '" data-tgl="' + escAttr(item.tanggal) + '" data-cat="' + escAttr(item.catatan) + '">Edit</button>' +
+            '<button class="action-btn delete" onclick="hapusItem(\'' + item.id + '\')">Hapus</button>' +
+          '</div>';
+        listEl.appendChild(card);
+      });
+
+      updateSummary(totalEst, totalReal);
+    }
+
+    function updateSummary(est, real) {
+      var selisih = real - est;
+      document.getElementById("total-estimasi").textContent = formatRp(est);
+      document.getElementById("total-realisasi").textContent = formatRp(real);
+
+      var selisihEl = document.getElementById("total-selisih");
+      selisihEl.textContent = (selisih >= 0 ? "+" : "") + formatRp(selisih);
+      selisihEl.className = "value " + (selisih >= 0 ? "positive" : "negative");
+    }
+
+    function mulaiEdit(id, btn) {
+      editingId = id;
+      document.getElementById("input-item").value = btn.dataset.item;
+      document.getElementById("input-estimasi").value = btn.dataset.est;
+      document.getElementById("input-realisasi").value = btn.dataset.real;
+      document.getElementById("input-tanggal").value = btn.dataset.tgl;
+      document.getElementById("input-catatan").value = btn.dataset.cat;
+
+      document.getElementById("form-title").textContent = "Edit Item";
+      document.getElementById("btn-simpan").textContent = "Simpan Perubahan";
+      document.getElementById("btn-batal-container").style.display = "block";
+      document.getElementById("input-item").focus();
+    }
+
+    function batalEdit() {
+      editingId = null;
+      document.getElementById("form-title").textContent = "Tambah Item";
+      document.getElementById("btn-simpan").textContent = "Tambah Item";
+      document.getElementById("btn-batal-container").style.display = "none";
+      resetForm();
+    }
+
+    function resetForm() {
+      document.getElementById("input-item").value = "";
+      document.getElementById("input-estimasi").value = "";
+      document.getElementById("input-realisasi").value = "";
+      document.getElementById("input-tanggal").value = "";
+      document.getElementById("input-catatan").value = "";
+    }
+
+    function hapusItem(id) {
+      tunjukkanConfirm("Apakah Anda yakin ingin menghapus item ini?", function() {
+        google.script.run
+          .withSuccessHandler(function() { loadData(); })
+          .hapusTahunan(id);
+      });
+    }
+
+    // ========== Helpers ==========
+    function formatRp(n) {
+      if (n === 0) return "Rp 0";
+      var abs = Math.abs(n);
+      var formatted = "Rp " + abs.toLocaleString('id-ID');
+      return n < 0 ? "(" + formatted + ")" : formatted;
+    }
+
+    function escHtml(str) {
+      var div = document.createElement("div");
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    function escAttr(str) {
+      return String(str || "").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+    }
+
+    // ========== Init ==========
+    window.onload = function() {
+      pilihUser(currentUser);
+      renderYearPicker();
+      loadData();
+    };
+
+    // ==========================================
+    // CUSTOM MODAL SYSTEM
+    // ==========================================
+    function tunjukkanAlert(pesan, callback) {
+      buatModalHtml("alert", pesan, null, function() { if (callback) callback(); });
+    }
+
+    function tunjukkanConfirm(pesan, callbackSetuju) {
+      buatModalHtml("confirm", pesan, null, function(hasil) {
+        if (hasil === true && callbackSetuju) callbackSetuju();
+      });
+    }
+
+    function buatModalHtml(tipe, pesan, nilaiDefault, callback) {
+      var modalLama = document.getElementById("custom-modal-overlay");
+      if (modalLama) modalLama.remove();
+
+      var styleEl = document.getElementById("custom-modal-styles");
+      if (!styleEl) {
+        styleEl = document.createElement("style");
+        styleEl.id = "custom-modal-styles";
+        styleEl.innerHTML = '#custom-modal-overlay{position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(15,23,42,.45);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:99999;animation:modalFadeIn .2s ease-out}.custom-modal-card{background:#fff;width:90%;max-width:320px;border-radius:16px;padding:20px;box-shadow:0 10px 25px -5px rgba(0,0,0,.1);text-align:center;border:1px solid #e2e8f0;animation:modalScaleUp .2s cubic-bezier(.34,1.56,.64,1)}.custom-modal-text{font-size:.95em;font-weight:500;color:#0f172a;margin-bottom:16px;line-height:1.5}.custom-modal-actions{display:flex;gap:10px;justify-content:center}.custom-modal-btn{flex:1;padding:10px;font-size:.85em;font-weight:600;border-radius:8px;border:none;cursor:pointer;transition:background-color .2s}.custom-modal-btn.primary{background:#059669;color:#fff}.custom-modal-btn.primary:hover{background:#047857}.custom-modal-btn.secondary{background:#f1f5f9;color:#475569;border:1px solid #e2e8f0}.custom-modal-btn.secondary:hover{background:#e2e8f0}@keyframes modalFadeIn{from{opacity:0}to{opacity:1}}@keyframes modalScaleUp{from{transform:scale(.95);opacity:0}to{transform:scale(1);opacity:1}}';
+        document.head.appendChild(styleEl);
+      }
+
+      var overlay = document.createElement("div");
+      overlay.id = "custom-modal-overlay";
+      var card = document.createElement("div");
+      card.className = "custom-modal-card";
+      var textDiv = document.createElement("div");
+      textDiv.className = "custom-modal-text";
+      textDiv.innerText = pesan;
+      card.appendChild(textDiv);
+
+      var actionsDiv = document.createElement("div");
+      actionsDiv.className = "custom-modal-actions";
+
+      if (tipe === "alert") {
+        var btnOk = document.createElement("button");
+        btnOk.className = "custom-modal-btn primary";
+        btnOk.innerText = "OK";
+        btnOk.onclick = function() { overlay.remove(); callback(true); };
+        actionsDiv.appendChild(btnOk);
+      } else if (tipe === "confirm") {
+        var btnCancel = document.createElement("button");
+        btnCancel.className = "custom-modal-btn secondary";
+        btnCancel.innerText = "Batal";
+        btnCancel.onclick = function() { overlay.remove(); callback(false); };
+        var btnOk = document.createElement("button");
+        btnOk.className = "custom-modal-btn primary";
+        btnOk.innerText = "OK";
+        btnOk.onclick = function() { overlay.remove(); callback(true); };
+        actionsDiv.appendChild(btnCancel);
+        actionsDiv.appendChild(btnOk);
+      }
+
+      card.appendChild(actionsDiv);
+      overlay.appendChild(card);
+      document.body.appendChild(overlay);
+    }
+  </script>
+</body>
+</html>

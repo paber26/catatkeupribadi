@@ -135,6 +135,14 @@ function initDatabase() {
       angSheet.getRange(2, 4, lastRow - 1, 1).setNumberFormat('@');
     }
   }
+
+  // 5. Sheet Tahunan (Transaksi Keuangan Tahunan)
+  var tahSheet = ss.getSheetByName("Tahunan");
+  if (!tahSheet) {
+    tahSheet = ss.insertSheet("Tahunan");
+    tahSheet.appendRow(["ID", "Item", "Estimasi", "Realisasi", "Tanggal", "Catatan", "Tahun"]);
+    tahSheet.setFrozenRows(1);
+  }
 }
 
 /**
@@ -555,6 +563,98 @@ function ubahAnggaran(user, kategori, nominal, bulan, tahun) {
   sheet.getRange(newRow, 3).setValue(Number(nominal));
   sheet.getRange(newRow, 4).setNumberFormat('@').setValue(targetPeriod);
   return { status: "success", message: "Anggaran " + kategori + " untuk " + user + " periode " + targetPeriod + " berhasil ditambahkan!" };
+}
+
+/**
+ * 15. READ TAHUNAN: Ambil semua data transaksi tahunan
+ */
+function ambilSemuaTahunan(tahun) {
+  initDatabase();
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName("Tahunan");
+  var dataValues = sheet.getDataRange().getDisplayValues();
+  
+  var targetYear = (tahun !== undefined && tahun !== null) ? String(tahun) : String(new Date().getFullYear());
+  
+  var hasil = [];
+  for (var i = 1; i < dataValues.length; i++) {
+    if (!dataValues[i][0]) continue;
+    var rowYear = dataValues[i][6] ? String(dataValues[i][6]).trim() : "";
+    if (rowYear !== "" && rowYear !== targetYear) continue;
+    
+    hasil.push({
+      id: dataValues[i][0],
+      item: dataValues[i][1] || "",
+      estimasi: Number(String(dataValues[i][2]).replace(/[^0-9.-]+/g, "")) || 0,
+      realisasi: Number(String(dataValues[i][3]).replace(/[^0-9.-]+/g, "")) || 0,
+      tanggal: dataValues[i][4] || "",
+      catatan: dataValues[i][5] || ""
+    });
+  }
+  return hasil;
+}
+
+/**
+ * 16. CREATE TAHUNAN: Tambah item transaksi tahunan
+ */
+function tambahTahunan(data, tahun) {
+  initDatabase();
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName("Tahunan");
+  
+  var id = "TH-" + new Date().getTime();
+  var targetYear = (tahun !== undefined && tahun !== null) ? String(tahun) : String(new Date().getFullYear());
+  
+  var newRow = sheet.getLastRow() + 1;
+  sheet.getRange(newRow, 1).setValue(id);
+  sheet.getRange(newRow, 2).setValue(data.item);
+  sheet.getRange(newRow, 3).setValue(Number(data.estimasi) || 0);
+  sheet.getRange(newRow, 4).setValue(Number(data.realisasi) || 0);
+  sheet.getRange(newRow, 5).setNumberFormat('@').setValue(data.tanggal || "");
+  sheet.getRange(newRow, 6).setValue(data.catatan || "");
+  sheet.getRange(newRow, 7).setNumberFormat('@').setValue(targetYear);
+  
+  return { status: "success", message: "Item '" + data.item + "' berhasil ditambahkan!" };
+}
+
+/**
+ * 17. UPDATE TAHUNAN: Ubah item transaksi tahunan
+ */
+function ubahTahunan(id, data) {
+  initDatabase();
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName("Tahunan");
+  var dataValues = sheet.getDataRange().getValues();
+  
+  for (var i = 1; i < dataValues.length; i++) {
+    if (String(dataValues[i][0]) === String(id)) {
+      sheet.getRange(i + 1, 2).setValue(data.item);
+      sheet.getRange(i + 1, 3).setValue(Number(data.estimasi) || 0);
+      sheet.getRange(i + 1, 4).setValue(Number(data.realisasi) || 0);
+      sheet.getRange(i + 1, 5).setNumberFormat('@').setValue(data.tanggal || "");
+      sheet.getRange(i + 1, 6).setValue(data.catatan || "");
+      return { status: "success", message: "Item berhasil diperbarui!" };
+    }
+  }
+  return { status: "error", message: "Item tidak ditemukan" };
+}
+
+/**
+ * 18. DELETE TAHUNAN: Hapus item transaksi tahunan
+ */
+function hapusTahunan(id) {
+  initDatabase();
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName("Tahunan");
+  var dataValues = sheet.getDataRange().getValues();
+  
+  for (var i = 1; i < dataValues.length; i++) {
+    if (String(dataValues[i][0]) === String(id)) {
+      sheet.deleteRow(i + 1);
+      return { status: "success", message: "Item berhasil dihapus!" };
+    }
+  }
+  return { status: "error", message: "Item tidak ditemukan" };
 }
 
 /**
