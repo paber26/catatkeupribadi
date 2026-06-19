@@ -467,13 +467,17 @@
 
       <!-- Chart Container -->
       <div class="chart-container" style="background: white; border-radius: 16px; padding: 16px; margin-top: 16px; margin-bottom: 20px; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
           <h4 style="margin: 0; color: #1e293b; font-size: 0.95em;">Grafik Pengeluaran</h4>
           <select id="chart-filter-user" onchange="renderChart()" style="padding: 4px 8px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 0.8em; outline: none; background: #f8fafc; color: #475569; font-weight: 600;">
             <option value="Gabungan">Gabungan</option>
             <option value="Aldo">Aldo</option>
             <option value="Iren">Iren</option>
           </select>
+        </div>
+        <div style="margin-bottom: 12px; display: flex; align-items: center;">
+          <input type="checkbox" id="chart-exclude-bills" onchange="renderChart()" checked style="margin-right: 6px; cursor: pointer;">
+          <label for="chart-exclude-bills" style="font-size: 0.8em; color: #64748b; cursor: pointer;">Kecualikan Tagihan & Sewa</label>
         </div>
         <div style="position: relative; height: 160px; width: 100%;">
           <canvas id="expenseChart"></canvas>
@@ -804,6 +808,8 @@
         var ctx = canvas.getContext('2d');
         
         var filterUser = document.getElementById('chart-filter-user').value;
+        var excludeBillsEl = document.getElementById('chart-exclude-bills');
+        var excludeBills = excludeBillsEl ? excludeBillsEl.checked : false;
         
         var filtered = allTransactions.filter(function(item) {
           var d = dapatkanBulanTransaksi(item.tanggal);
@@ -813,6 +819,14 @@
         var expenses = filtered.filter(function(item) {
           if (item.tipe !== "Pengeluaran") return false;
           if (filterUser !== "Gabungan" && item.pembuat !== filterUser) return false;
+          
+          if (excludeBills) {
+            var cat = (item.kategori || "").toLowerCase();
+            if (cat.indexOf("tagihan") > -1 || cat.indexOf("sewa") > -1) {
+              return false;
+            }
+          }
+          
           return true;
         });
         
