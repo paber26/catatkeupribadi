@@ -605,29 +605,17 @@
           return;
         }
 
-        if (editingTransactionId) {
-          google.script.run
-            .withSuccessHandler(function(response) {
-              tunjukkanAlert(response.message, function() {
-                lastUsedDate = document.getElementById('tanggal').value;
-                batalEditTransaksi();
-                loadDataDariSheets();
-              });
-            })
-            .ubahData(editingTransactionId, data);
-        } else {
-          google.script.run
-            .withSuccessHandler(function(response) {
-              tunjukkanAlert(response.message, function() {
-                lastUsedDate = document.getElementById('tanggal').value;
-                document.getElementById('jumlah').value = "";
-                document.getElementById('keterangan').value = "";
-                // Tanggal tetap di tanggal terakhir yang diinput
-                loadDataDariSheets();
-              });
-            })
-            .tambahData(data);
-        }
+        google.script.run
+          .withSuccessHandler(function(response) {
+            tunjukkanAlert(response.message, function() {
+              lastUsedDate = document.getElementById('tanggal').value;
+              document.getElementById('jumlah').value = "";
+              document.getElementById('keterangan').value = "";
+              // Tanggal tetap di tanggal terakhir yang diinput
+              loadDataDariSheets();
+            });
+          })
+          .tambahData(data);
       }
 
       function loadDataDariSheets() {
@@ -823,54 +811,100 @@
         document.getElementById("picker-year").textContent = selectedTahun;
       }
 
-      function mulaiEditTransaksi(btn) {
-        editingTransactionId = btn.dataset.id;
+      let editModalUser = "Aldo";
+      let editModalTipe = "Pengeluaran";
+
+      function pilihUserEdit(nama) {
+        editModalUser = nama;
+        document.getElementById('btn-edit-aldo').classList.remove('active');
+        document.getElementById('btn-edit-iren').classList.remove('active');
+        document.getElementById('btn-edit-' + nama.toLowerCase()).classList.add('active');
+      }
+
+      function pilihTipeEdit(tipe) {
+        editModalTipe = tipe;
+        var btnPengeluaran = document.getElementById('btn-edit-pengeluaran');
+        var btnPemasukan = document.getElementById('btn-edit-pemasukan');
         
-        document.getElementById('tanggal').value = parseDateToInputFormat(btn.dataset.tanggal);
-        document.getElementById('kategori').value = btn.dataset.kategori;
-        document.getElementById('jumlah').value = btn.dataset.jumlah;
-        document.getElementById('keterangan').value = btn.dataset.keterangan;
-        
-        pilihUser(btn.dataset.pembuat);
-        pilihTipe(btn.dataset.tipe || "Pengeluaran");
-        
-        var submitBtn = document.querySelector('button.primary');
-        submitBtn.textContent = "Simpan Perubahan";
-        
-        if (!document.getElementById('btn-cancel-edit')) {
-          var cancelBtn = document.createElement('button');
-          cancelBtn.id = 'btn-cancel-edit';
-          cancelBtn.className = 'secondary';
-          cancelBtn.textContent = "Batal Edit";
-          cancelBtn.onclick = batalEditTransaksi;
-          cancelBtn.style.padding = "12px";
-          cancelBtn.style.background = "#64748b";
-          cancelBtn.style.color = "white";
-          cancelBtn.style.border = "none";
-          cancelBtn.style.borderRadius = "8px";
-          cancelBtn.style.cursor = "pointer";
-          
-          document.querySelector('.btn-container').appendChild(cancelBtn);
+        if (tipe === "Pengeluaran") {
+          btnPengeluaran.style.background = "#ef4444";
+          btnPengeluaran.style.color = "white";
+          btnPemasukan.style.background = "transparent";
+          btnPemasukan.style.color = "#64748b";
+        } else {
+          btnPemasukan.style.background = "#10b981";
+          btnPemasukan.style.color = "white";
+          btnPengeluaran.style.background = "transparent";
+          btnPengeluaran.style.color = "#64748b";
         }
       }
 
-      function batalEditTransaksi() {
+      function tutupModalEdit() {
+        document.getElementById('modal-edit-transaksi').style.display = 'none';
         editingTransactionId = null;
-        document.getElementById('jumlah').value = "";
-        document.getElementById('keterangan').value = "";
-        // Kembalikan ke tanggal terakhir yang diinput, bukan hari ini
-        if (lastUsedDate) {
-          document.getElementById('tanggal').value = lastUsedDate;
-        } else {
-          setTodayDate();
+      }
+
+      function mulaiEditTransaksi(btn) {
+        editingTransactionId = btn.dataset.id;
+        
+        document.getElementById('edit-tanggal').value = parseDateToInputFormat(btn.dataset.tanggal);
+        document.getElementById('edit-jumlah').value = btn.dataset.jumlah;
+        document.getElementById('edit-keterangan').value = btn.dataset.keterangan;
+        
+        pilihUserEdit(btn.dataset.pembuat || "Aldo");
+        pilihTipeEdit(btn.dataset.tipe || "Pengeluaran");
+        
+        var mainSelect = document.getElementById('kategori');
+        var editSelect = document.getElementById('edit-kategori');
+        editSelect.innerHTML = mainSelect.innerHTML;
+        editSelect.value = btn.dataset.kategori;
+        
+        document.getElementById('modal-edit-transaksi').style.display = 'flex';
+      }
+
+      function simpanEditTransaksiModal() {
+        var data = {
+          tanggal: formatInputDate(document.getElementById('edit-tanggal').value),
+          kategori: document.getElementById('edit-kategori').value,
+          jumlah: document.getElementById('edit-jumlah').value,
+          keterangan: document.getElementById('edit-keterangan').value,
+          pembuat: editModalUser,
+          tipe: editModalTipe
+        };
+
+        if(!data.tanggal) {
+          tunjukkanAlert("Silakan pilih tanggal transaksi.");
+          return;
         }
-        pilihTipe("Pengeluaran");
-        
-        var submitBtn = document.querySelector('button.primary');
-        submitBtn.textContent = "Simpan Transaksi";
-        
-        var cancelBtn = document.getElementById('btn-cancel-edit');
-        if (cancelBtn) cancelBtn.remove();
+        if(!data.kategori) {
+          tunjukkanAlert("Silakan pilih kategori.");
+          return;
+        }
+        if(!data.jumlah || data.jumlah <= 0) {
+          tunjukkanAlert("Silakan masukkan jumlah nominal uang yang valid.");
+          return;
+        }
+
+        var btnSimpan = document.querySelector('#modal-edit-transaksi .primary');
+        var oldText = btnSimpan.textContent;
+        btnSimpan.textContent = "Menyimpan...";
+        btnSimpan.disabled = true;
+
+        google.script.run
+          .withSuccessHandler(function(response) {
+            btnSimpan.textContent = oldText;
+            btnSimpan.disabled = false;
+            tutupModalEdit();
+            tunjukkanAlert(response.message, function() {
+              loadDataDariSheets();
+            });
+          })
+          .withFailureHandler(function(error) {
+            btnSimpan.textContent = oldText;
+            btnSimpan.disabled = false;
+            tunjukkanAlert("Terjadi kesalahan: " + error.message);
+          })
+          .ubahData(editingTransactionId, data);
       }
 
       function hapusDariSheets(id) {
@@ -1121,5 +1155,47 @@
         }
       }
     </script>
+
+    <!-- MODAL EDIT TRANSAKSI -->
+    <div id="modal-edit-transaksi" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.45); backdrop-filter: blur(4px); z-index: 99999; align-items: center; justify-content: center;">
+      <div class="custom-modal-card" style="width: 90%; max-width: 400px; padding: 24px; text-align: left; max-height: 90vh; overflow-y: auto;">
+        <h3 style="margin-top: 0; margin-bottom: 20px; text-align: center; font-size: 1.2em; color: #0f172a;">Edit Transaksi</h3>
+        
+        <div class="user-selector" style="margin-bottom: 16px;">
+          <button class="user-btn active" id="btn-edit-aldo" onclick="pilihUserEdit('Aldo')" style="flex:1;">Aldo</button>
+          <button class="user-btn" id="btn-edit-iren" onclick="pilihUserEdit('Iren')" style="flex:1;">Iren</button>
+        </div>
+
+        <div class="type-selector" style="display: flex; gap: 6px; background: #f1f5f9; padding: 4px; border-radius: 12px; margin-bottom: 16px;">
+          <button type="button" id="btn-edit-pengeluaran" onclick="pilihTipeEdit('Pengeluaran')" style="flex: 1; padding: 10px; border: none; border-radius: 8px; font-size: 0.85em; font-weight: 600; cursor: pointer; background: #ef4444; color: white;">Pengeluaran</button>
+          <button type="button" id="btn-edit-pemasukan" onclick="pilihTipeEdit('Pemasukan')" style="flex: 1; padding: 10px; border: none; border-radius: 8px; font-size: 0.85em; font-weight: 600; cursor: pointer; background: transparent; color: #64748b;">Pemasukan</button>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label style="display: block; margin-bottom: 6px; font-size: 0.85em; font-weight: 600; color: #475569;">Tanggal Transaksi</label>
+          <input type="date" id="edit-tanggal" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box;">
+        </div>
+
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label style="display: block; margin-bottom: 6px; font-size: 0.85em; font-weight: 600; color: #475569;">Kategori</label>
+          <select id="edit-kategori" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box;"></select>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label style="display: block; margin-bottom: 6px; font-size: 0.85em; font-weight: 600; color: #475569;">Jumlah (Rupiah)</label>
+          <input type="number" id="edit-jumlah" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box;">
+        </div>
+
+        <div class="form-group" style="margin-bottom: 20px;">
+          <label style="display: block; margin-bottom: 6px; font-size: 0.85em; font-weight: 600; color: #475569;">Keterangan</label>
+          <input type="text" id="edit-keterangan" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box;">
+        </div>
+
+        <div class="custom-modal-actions" style="display: flex; gap: 10px;">
+          <button class="custom-modal-btn secondary" onclick="tutupModalEdit()" style="flex: 1; padding: 12px; border-radius: 8px; border: none; background: #f1f5f9; color: #475569; cursor: pointer; font-weight: 600;">Batal</button>
+          <button class="custom-modal-btn primary" onclick="simpanEditTransaksiModal()" style="flex: 1; padding: 12px; border-radius: 8px; border: none; background: #007bff; color: white; cursor: pointer; font-weight: 600;">Simpan</button>
+        </div>
+      </div>
+    </div>
   </body>
 </html>
