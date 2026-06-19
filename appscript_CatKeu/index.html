@@ -2,6 +2,7 @@
 <html>
   <head>
     <base target="_top">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
       /* Reset & Base Styles */
       * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -464,6 +465,21 @@
         </button>
       </div>
 
+      <!-- Chart Container -->
+      <div class="chart-container" style="background: white; border-radius: 16px; padding: 16px; margin-top: 16px; margin-bottom: 20px; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+          <h4 style="margin: 0; color: #1e293b; font-size: 0.95em;">Grafik Pengeluaran</h4>
+          <select id="chart-filter-user" onchange="renderChart()" style="padding: 4px 8px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 0.8em; outline: none; background: #f8fafc; color: #475569; font-weight: 600;">
+            <option value="Gabungan">Gabungan</option>
+            <option value="Aldo">Aldo</option>
+            <option value="Iren">Iren</option>
+          </select>
+        </div>
+        <div style="position: relative; height: 160px; width: 100%;">
+          <canvas id="expenseChart"></canvas>
+        </div>
+      </div>
+
       <div class="history-list" id="riwayat-list">
         <!-- Diisi secara dinamis -->
       </div>
@@ -658,6 +674,7 @@
 
         if (filtered.length === 0) {
           listContainer.innerHTML = `<div style="text-align: center; color: #64748b; padding: 20px; font-size: 0.9em;">Belum ada riwayat transaksi di bulan ${monthNames[selectedBulan]} ${selectedTahun}.</div>`;
+          renderChart();
           return;
         }
 
@@ -774,6 +791,100 @@
 
           group.appendChild(body);
           listContainer.appendChild(group);
+        });
+        
+        renderChart();
+      }
+
+      let expenseChartInstance = null;
+
+      function renderChart() {
+        var canvas = document.getElementById('expenseChart');
+        if (!canvas) return;
+        var ctx = canvas.getContext('2d');
+        
+        var filterUser = document.getElementById('chart-filter-user').value;
+        
+        var filtered = allTransactions.filter(function(item) {
+          var d = dapatkanBulanTransaksi(item.tanggal);
+          return d.month === selectedBulan && d.year === selectedTahun;
+        });
+        
+        var expenses = filtered.filter(function(item) {
+          if (item.tipe !== "Pengeluaran") return false;
+          if (filterUser !== "Gabungan" && item.pembuat !== filterUser) return false;
+          return true;
+        });
+        
+        var daysInMonth = new Date(selectedTahun, selectedBulan + 1, 0).getDate();
+        var labels = [];
+        var dataPoints = [];
+        
+        var dailyTotals = {};
+        for(var i=1; i<=daysInMonth; i++) {
+          dailyTotals[i] = 0;
+          labels.push(i.toString());
+        }
+        
+        expenses.forEach(function(item) {
+          var d = item.tanggal;
+          var parts = d.indexOf('/') > -1 ? d.split('/') : d.split('-');
+          if (parts.length >= 3) {
+            var dayNum = parseInt(d.indexOf('/') > -1 ? parts[0] : parts[2], 10);
+            if(dailyTotals[dayNum] !== undefined) {
+              dailyTotals[dayNum] += Number(item.jumlah);
+            }
+          }
+        });
+        
+        for(var i=1; i<=daysInMonth; i++) {
+          dataPoints.push(dailyTotals[i]);
+        }
+        
+        if (expenseChartInstance) {
+          expenseChartInstance.destroy();
+        }
+        
+        expenseChartInstance = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: labels,
+            datasets: [{
+              label: 'Pengeluaran (Rp)',
+              data: dataPoints,
+              backgroundColor: '#ef4444',
+              borderRadius: 4
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                callbacks: {
+                  label: function(context) {
+                    var value = context.parsed.y;
+                    return 'Rp ' + value.toLocaleString('id-ID');
+                  }
+                }
+              }
+            },
+            scales: {
+              y: {
+                beginAtZero: true,
+                ticks: {
+                  callback: function(value) {
+                    if (value === 0) return '0';
+                    return (value / 1000) + 'k';
+                  }
+                }
+              },
+              x: {
+                grid: { display: false }
+              }
+            }
+          }
         });
       }
 
