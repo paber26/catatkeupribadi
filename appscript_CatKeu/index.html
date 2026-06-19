@@ -475,12 +475,12 @@
             <option value="Iren">Iren</option>
           </select>
         </div>
-        <div style="margin-bottom: 12px; display: flex; align-items: center; cursor: pointer; width: 100%;" onclick="var cb=document.getElementById('chart-exclude-bills'); cb.checked=!cb.checked; renderChart();">
-          <input type="checkbox" id="chart-exclude-bills" checked style="margin-right: 8px; width: 16px; height: 16px; pointer-events: none; margin-bottom: 0;">
-          <span style="font-size: 0.8em; color: #64748b; font-weight: 500; text-transform: none; white-space: normal;">Kecualikan Tagihan & Sewa</span>
-        </div>
         <div style="position: relative; height: 160px; width: 100%;">
           <canvas id="expenseChart"></canvas>
+        </div>
+        <div style="margin-top: 16px; display: flex; align-items: center; justify-content: center; background: #f8fafc; padding: 8px 12px; border-radius: 8px; cursor: pointer; border: 1px solid #e2e8f0;" onclick="var cb=document.getElementById('chart-exclude-bills'); cb.checked=!cb.checked; renderChart();">
+          <input type="checkbox" id="chart-exclude-bills" checked style="margin-right: 8px; width: 16px; height: 16px; pointer-events: none; margin-bottom: 0;">
+          <span style="font-size: 0.75em; color: #475569; font-weight: 600; text-transform: none; white-space: normal;">Kecualikan Pengeluaran Tagihan & Sewa</span>
         </div>
       </div>
 
