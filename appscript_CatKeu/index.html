@@ -846,14 +846,20 @@
         }
         
         expenseChartInstance = new Chart(ctx, {
-          type: 'bar',
+          type: 'line',
           data: {
             labels: labels,
             datasets: [{
               label: 'Pengeluaran (Rp)',
               data: dataPoints,
-              backgroundColor: '#ef4444',
-              borderRadius: 4
+              backgroundColor: 'rgba(239, 68, 68, 0.15)',
+              borderColor: '#ef4444',
+              borderWidth: 2,
+              fill: true,
+              tension: 0.3,
+              pointBackgroundColor: '#ef4444',
+              pointRadius: 2,
+              pointHoverRadius: 4
             }]
           },
           options: {
